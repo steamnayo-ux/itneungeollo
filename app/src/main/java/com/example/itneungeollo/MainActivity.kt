@@ -200,6 +200,8 @@ fun IngredientScreen(
         "🍖 햄" to "햄",
         "🐟 참치" to "참치",
         "🥔 감자" to "감자"
+
+
     )
 
     var selectedIngredients by remember {
@@ -603,6 +605,12 @@ fun normalizeIngredient(
 
         ingredient.contains("감자") -> "감자"
 
+        ingredient.contains("부침가루") -> "부침가루"
+        ingredient.contains("마요네즈") || ingredient.contains("마요") -> "마요네즈"
+        ingredient.contains("라면") -> "라면"
+        ingredient.contains("소시지") || ingredient.contains("소세지") -> "소시지"
+        ingredient.contains("치즈") -> "치즈"
+
         else -> ingredient
     }
 }
@@ -625,37 +633,25 @@ fun RecommendScreen(
             recipes = recipes
         )
 
-    val recipesPerPage = 3
-
-    var currentPage by remember {
-        mutableStateOf(0)
-    }
-
-    val startIndex =
-        currentPage * recipesPerPage
-
-    val endIndex =
-        minOf(
-            startIndex + recipesPerPage,
-            recommendedRecipes.size
-        )
-
-    val currentRecipes =
-        if (startIndex < recommendedRecipes.size) {
-
-            recommendedRecipes.subList(
-                startIndex,
-                endIndex
-            )
-
-        } else {
-
-            emptyList()
+    // 바로 만들 수 있는 레시피
+    val readyRecipes =
+        recommendedRecipes.filter {
+            it.missingRequired.isEmpty()
         }
 
+    // 필수 재료가 1개만 부족한 레시피
+    val almostRecipes =
+        recommendedRecipes.filter {
+            it.missingRequired.size == 1
+        }
+
+    // 필수 재료가 2개 이상 부족한 레시피
+    val candidateRecipes =
+        recommendedRecipes.filter {
+            it.missingRequired.size >= 2
+        }
 
     val scrollState = rememberScrollState()
-
 
     Column(
         modifier = Modifier
@@ -665,46 +661,150 @@ fun RecommendScreen(
             .padding(20.dp)
     ) {
 
+        // 뒤로가기
         Button(
             onClick = onBackClick
         ) {
-
             Text(
                 text = "← 재료 다시 고르기"
             )
         }
 
-
         Spacer(
             modifier = Modifier.height(20.dp)
         )
 
-
         Text(
-            text = "지금 만들 수 있어요 🍳",
+            text = "오늘은 이걸로 먹어요 🍳",
             fontSize = 29.sp
         )
-
 
         Spacer(
             modifier = Modifier.height(8.dp)
         )
 
-
         Text(
-            text =
-                "내 재료: ${
-                    userIngredients.joinToString(", ")
-                }",
-
+            text = "내 재료: ${
+                userIngredients.joinToString(", ")
+            }",
             fontSize = 16.sp
         )
 
-
         Spacer(
-            modifier = Modifier.height(20.dp)
+            modifier = Modifier.height(25.dp)
         )
 
+
+        // =================================================
+        // 바로 만들 수 있어요
+        // =================================================
+
+        if (readyRecipes.isNotEmpty()) {
+
+            Text(
+                text = "🔥 지금 바로 만들 수 있어요",
+                fontSize = 23.sp
+            )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            readyRecipes.forEachIndexed { index, recommendation ->
+
+                RecipeCard(
+                    rank = index + 1,
+                    recommendation = recommendation,
+                    userIngredients = userIngredients,
+                    onRecipeClick = {
+                        onRecipeClick(recommendation.recipe)
+                    }
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+            }
+        }
+
+
+        // =================================================
+        // 거의 다 있어요
+        // =================================================
+
+        if (almostRecipes.isNotEmpty()) {
+
+            Spacer(
+                modifier = Modifier.height(15.dp)
+            )
+
+            Text(
+                text = "👍 재료가 거의 있어요",
+                fontSize = 23.sp
+            )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            almostRecipes.forEachIndexed { index, recommendation ->
+
+                RecipeCard(
+                    rank = index + 1,
+                    recommendation = recommendation,
+                    userIngredients = userIngredients,
+                    onRecipeClick = {
+                        onRecipeClick(recommendation.recipe)
+                    }
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+            }
+        }
+
+
+        // =================================================
+        // 이런 메뉴도 있어요
+        // =================================================
+
+        if (candidateRecipes.isNotEmpty()) {
+
+            Spacer(
+                modifier = Modifier.height(15.dp)
+            )
+
+            Text(
+                text = "💡 이런 메뉴도 있어요",
+                fontSize = 23.sp
+            )
+
+            Spacer(
+                modifier = Modifier.height(12.dp)
+            )
+
+            candidateRecipes.forEachIndexed { index, recommendation ->
+
+                RecipeCard(
+                    rank = index + 1,
+                    recommendation = recommendation,
+                    userIngredients = userIngredients,
+                    onRecipeClick = {
+                        onRecipeClick(recommendation.recipe)
+                    }
+                )
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+            }
+        }
+
+
+        // =================================================
+        // 아무것도 없을 때
+        // =================================================
 
         if (recommendedRecipes.isEmpty()) {
 
@@ -720,50 +820,18 @@ fun RecommendScreen(
 
                 Text(
                     text =
-                        "지금 가진 재료로 만들 수 있는\n레시피가 없어요 😢",
+                        "비슷한 재료로 만들 수 있는\n레시피를 찾지 못했어요 😢",
 
                     fontSize = 19.sp,
 
                     modifier = Modifier.padding(20.dp)
                 )
             }
-
-        } else {
-
-            currentRecipes.forEachIndexed { index, recipe ->
-
-                RecipeCard(
-                    rank = startIndex + index + 1,
-                    recipe = recipe,
-                    userIngredients = userIngredients,
-
-                    onRecipeClick = {
-                        onRecipeClick(recipe)
-                    }
-                )
-
-                Spacer(
-                    modifier = Modifier.height(12.dp)
-                )
-            }
-
-
-            if (endIndex < recommendedRecipes.size) {
-
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-
-                    onClick = {
-                        currentPage++
-                    }
-                ) {
-
-                    Text(
-                        text = "다른 메뉴 보여줘 🍽️"
-                    )
-                }
-            }
         }
+
+        Spacer(
+            modifier = Modifier.height(30.dp)
+        )
     }
 }
 
@@ -775,32 +843,12 @@ fun RecommendScreen(
 @Composable
 fun RecipeCard(
     rank: Int,
-    recipe: Recipe,
+    recommendation: RecipeRecommendation,
     userIngredients: Set<String>,
     onRecipeClick: () -> Unit
 ) {
 
-    val requiredCount =
-        recipe.ingredients.count { ingredient ->
-
-            ingredient in userIngredients
-        }
-
-
-    val totalRequired =
-        recipe.ingredients.size
-
-
-    val optionalCount =
-        recipe.optionalIngredients.count { ingredient ->
-
-            ingredient in userIngredients
-        }
-
-
-    val totalMatch =
-        requiredCount + optionalCount
-
+    val recipe = recommendation.recipe
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -818,56 +866,75 @@ fun RecipeCard(
                 .padding(18.dp)
         ) {
 
+            // 레시피 이름
             Text(
                 text = "$rank. ${recipe.name}",
                 fontSize = 24.sp
             )
-
 
             Spacer(
                 modifier = Modifier.height(10.dp)
             )
 
 
+            // 필수 재료 보유 현황
             Text(
                 text =
                     "필수 재료  " +
-                            "$requiredCount / $totalRequired ✅",
+                            "${recommendation.matchedRequired} / " +
+                            "${recipe.ingredients.size} ✅",
 
                 fontSize = 16.sp
             )
-
 
             Spacer(
                 modifier = Modifier.height(5.dp)
             )
 
 
+            // 부족한 재료
+            if (recommendation.missingRequired.isNotEmpty()) {
+
+                Text(
+                    text =
+                        "부족한 재료: " +
+                                recommendation.missingRequired.joinToString(", "),
+
+                    fontSize = 16.sp
+                )
+
+                Spacer(
+                    modifier = Modifier.height(5.dp)
+                )
+            }
+
+
+            // 선택 재료
             Text(
                 text =
                     "내 재료 활용  " +
-                            "${totalMatch}개 ⭐",
+                            "${recommendation.matchedRequired + recommendation.matchedOptional}개 ⭐",
 
                 fontSize = 16.sp
             )
-
 
             Spacer(
                 modifier = Modifier.height(5.dp)
             )
 
 
+            // 조리 시간
             Text(
                 text = "⏱ ${recipe.time}분",
                 fontSize = 16.sp
             )
-
 
             Spacer(
                 modifier = Modifier.height(15.dp)
             )
 
 
+            // 상세 레시피 버튼
             Button(
                 modifier = Modifier.fillMaxWidth(),
 

@@ -42,6 +42,14 @@ data class Recipe(
     val steps: List<String>
 )
 
+data class RecipeRecommendation(
+    val recipe: Recipe,
+    val matchedRequired: Int,
+    val missingRequired: List<String>,
+    val matchedOptional: Int,
+    val score: Double
+)
+
 
 // =====================================================
 // 레시피 목록
@@ -76,11 +84,13 @@ val recipes = listOf(
         ),
 
         steps = listOf(
-            "김치와 대파를 잘게 썬다.",
-            "팬에 식용유를 두르고 김치와 대파를 볶는다.",
+            "김치를 잘게 썬다.",
+            "대파가 있다면 잘게 썬다.",
+            "팬에 식용유를 두르고 김치를 볶는다.",
+            "대파가 있다면 넣고 함께 볶는다.",
             "밥을 넣고 함께 볶는다.",
             "후추를 넣어 간을 맞춘다.",
-            "기호에 따라 계란을 올린다.",
+            "기호에 따라 계란과 김가루를 올린다.",
             "불을 끄고 참기름을 넣어 마무리한다."
         )
     ),
@@ -148,7 +158,9 @@ val recipes = listOf(
 
         steps = listOf(
             "김치를 잘게 썬다.",
+            "대파가 있다면 잘게 썬다.",
             "팬에 식용유를 두르고 김치를 볶는다.",
+            "대파가 있다면 넣고 함께 볶는다.",
             "계란을 넣고 함께 볶는다.",
             "진간장을 넣어 간을 맞춘다.",
             "밥을 그릇에 담고 볶은 재료를 올린다.",
@@ -201,9 +213,9 @@ val recipes = listOf(
 
         ingredients = listOf(
             "밥",
-            "참치"
+            "참치",
+            "마요네즈"
         ),
-
         optionalIngredients = listOf(
             "계란",
             "김가루"
@@ -220,6 +232,7 @@ val recipes = listOf(
             "진간장을 조금 넣어 간을 한다.",
             "밥을 그릇에 담는다.",
             "참치를 밥 위에 올린다.",
+            "마요네즈를 뿌린다.",
             "기호에 따라 계란과 김가루를 올린다."
         )
     ),
@@ -255,7 +268,8 @@ val recipes = listOf(
 
         steps = listOf(
             "참치의 기름을 뺀다.",
-            "식용유를 두른 팬에 양파와 대파를 볶는다.",
+            "팬에 식용유를 두른다.",
+            "양파와 대파가 있다면 먼저 볶는다.",
             "참치를 넣고 볶는다.",
             "밥을 넣고 함께 볶는다.",
             "진간장과 후추로 간을 한다.",
@@ -292,10 +306,10 @@ val recipes = listOf(
 
         steps = listOf(
             "햄을 먹기 좋은 크기로 자른다.",
-            "식용유를 두르고 햄과 양파를 볶는다.",
+            "식용유를 두르고 햄을 볶는다.",
+            "양파와 대파가 있다면 넣고 함께 볶는다.",
             "밥을 넣고 함께 볶는다.",
             "소금과 후추로 간을 한다.",
-            "대파를 넣는다.",
             "기호에 따라 계란을 추가한다."
         )
     ),
@@ -435,6 +449,7 @@ val recipes = listOf(
             "식용유를 두르고 김치를 볶는다.",
             "설탕을 조금 넣어 간을 조절한다.",
             "두부와 볶은 김치를 함께 담는다.",
+            "대파가 있다면 올린다.",
             "참기름을 조금 뿌린다."
         )
     ),
@@ -472,7 +487,7 @@ val recipes = listOf(
             "고춧가루와 다진 마늘을 넣는다.",
             "물을 넣고 끓인다.",
             "진간장과 설탕으로 간을 맞춘다.",
-            "두부와 채소를 넣고 끓인다."
+            "두부와 채소가 있다면 넣고 끓인다."
         )
     ),
 
@@ -508,7 +523,8 @@ val recipes = listOf(
             "고춧가루와 다진 마늘을 넣는다.",
             "물을 넣고 끓인다.",
             "두부를 넣는다.",
-            "진간장으로 간을 맞추고 대파를 넣는다."
+            "진간장으로 간을 맞춘다.",
+            "대파와 양파가 있다면 넣고 끓인다."
         )
     ),
 
@@ -540,9 +556,9 @@ val recipes = listOf(
         steps = listOf(
             "감자를 얇게 썬다.",
             "식용유를 두른 팬에 감자를 볶는다.",
-            "양파를 넣는다.",
+            "양파가 있다면 넣는다.",
             "소금과 후추로 간한다.",
-            "감자가 익으면 대파를 넣고 마무리한다."
+            "감자가 익으면 대파가 있다면 넣고 마무리한다."
         )
     ),
 
@@ -575,10 +591,10 @@ val recipes = listOf(
         steps = listOf(
             "감자를 얇게 썬다.",
             "식용유를 두른 팬에 감자를 볶는다.",
-            "양파를 넣고 익힌다.",
+            "양파가 있다면 넣고 익힌다.",
             "계란을 넣고 함께 볶는다.",
             "소금과 후추로 간한다.",
-            "대파를 넣고 마무리한다."
+            "대파가 있다면 넣고 마무리한다."
         )
     ),
 
@@ -613,7 +629,7 @@ val recipes = listOf(
             "감자를 넣고 살짝 볶는다.",
             "물을 넣고 진간장과 설탕을 넣는다.",
             "중불에서 감자가 익을 때까지 졸인다.",
-            "대파를 넣고 마무리한다."
+            "대파가 있다면 넣고 마무리한다."
         )
     ),
 
@@ -648,7 +664,7 @@ val recipes = listOf(
             "계란을 풀고 소금과 후추로 간한다.",
             "햄에 계란물을 입힌다.",
             "식용유를 두른 팬에서 노릇하게 굽는다.",
-            "대파나 양파를 곁들인다."
+            "대파나 양파가 있다면 곁들인다."
         )
     ),
 
@@ -684,7 +700,7 @@ val recipes = listOf(
             "식용유를 두른 팬에 햄을 볶는다.",
             "김치를 넣고 볶는다.",
             "설탕과 고춧가루를 넣어 간을 맞춘다.",
-            "대파를 넣고 마무리한다."
+            "대파와 양파가 있다면 넣고 볶는다."
         )
     ),
 
@@ -699,7 +715,8 @@ val recipes = listOf(
         time = 20,
 
         ingredients = listOf(
-            "김치"
+            "김치",
+            "부침가루"
         ),
 
         optionalIngredients = listOf(
@@ -715,8 +732,8 @@ val recipes = listOf(
 
         steps = listOf(
             "김치를 잘게 썬다.",
+            "부침가루와 물을 섞어 반죽을 만든다.",
             "김치와 반죽을 섞는다.",
-            "소금으로 간을 맞춘다.",
             "팬에 식용유를 두른다.",
             "반죽을 얇게 펼친다.",
             "앞뒤로 노릇하게 굽는다."
@@ -747,6 +764,7 @@ val recipes = listOf(
         ),
 
         steps = listOf(
+            "감자를 깨끗이 씻고 껍질을 벗긴다.",
             "감자를 곱게 간다.",
             "소금으로 간한다.",
             "팬에 식용유를 두른다.",
@@ -816,7 +834,7 @@ val recipes = listOf(
         steps = listOf(
             "계란을 풀어준다.",
             "소금으로 간한다.",
-            "대파와 양파를 잘게 썬다.",
+            "대파와 양파가 있다면 잘게 썬다.",
             "계란과 채소를 섞는다.",
             "팬에 식용유를 두르고 계란물을 얇게 부친다.",
             "돌돌 말아 익힌다."
@@ -851,7 +869,7 @@ val recipes = listOf(
 
         steps = listOf(
             "참치의 기름을 뺀다.",
-            "식용유를 두른 팬에 대파와 양파를 볶는다.",
+            "식용유를 두른 팬에 대파와 양파가 있다면 볶는다.",
             "참치를 넣는다.",
             "계란을 넣고 볶는다.",
             "소금과 후추로 간한다."
@@ -889,7 +907,7 @@ val recipes = listOf(
             "식용유를 두른 팬에 김치를 볶는다.",
             "참치를 넣는다.",
             "설탕과 고춧가루를 넣는다.",
-            "대파와 양파를 넣고 볶아 완성한다."
+            "대파와 양파가 있다면 넣고 볶아 완성한다."
         )
     ),
 
@@ -926,7 +944,7 @@ val recipes = listOf(
             "김치를 넣고 함께 볶는다.",
             "진간장과 설탕으로 간을 맞춘다.",
             "밥 위에 볶은 재료를 올린다.",
-            "기호에 따라 계란을 추가한다."
+            "기호에 따라 계란과 대파를 추가한다."
         )
     ),
 
@@ -962,7 +980,7 @@ val recipes = listOf(
             "진간장을 넣어 간을 한다.",
             "밥을 그릇에 담는다.",
             "두부를 밥 위에 올린다.",
-            "참기름과 대파를 올린다."
+            "참기름을 넣고 대파가 있다면 올린다."
         )
     ),
 
@@ -995,7 +1013,8 @@ val recipes = listOf(
 
         steps = listOf(
             "감자를 잘게 자른다.",
-            "식용유를 두르고 감자와 양파를 볶는다.",
+            "식용유를 두르고 감자를 볶는다.",
+            "양파가 있다면 넣고 함께 볶는다.",
             "물을 조금 넣고 익힌다.",
             "진간장과 설탕으로 간한다.",
             "밥 위에 올린다.",
@@ -1035,7 +1054,7 @@ val recipes = listOf(
             "진간장을 조금 넣어 간한다.",
             "밥을 그릇에 담는다.",
             "햄을 밥 위에 올린다.",
-            "기호에 따라 계란과 채소를 추가한다."
+            "기호에 따라 계란과 양파, 대파를 추가한다."
         )
     ),
 
@@ -1070,7 +1089,7 @@ val recipes = listOf(
             "식용유를 두른 팬에 김치를 볶는다.",
             "고춧가루를 넣는다.",
             "두부를 넣고 함께 볶는다.",
-            "양파와 대파를 넣는다.",
+            "양파와 대파가 있다면 넣는다.",
             "불을 끄고 참기름을 넣는다."
         )
     ),
@@ -1106,7 +1125,7 @@ val recipes = listOf(
             "식용유를 두른 팬에 햄을 볶는다.",
             "두부를 넣는다.",
             "진간장으로 간한다.",
-            "양파와 대파를 넣는다.",
+            "양파와 대파가 있다면 넣는다.",
             "후추를 넣고 마무리한다."
         )
     )
@@ -1120,122 +1139,82 @@ val recipes = listOf(
 fun recommendRecipes(
     userIngredients: Set<String>,
     recipes: List<Recipe>
-): List<Recipe> {
+): List<RecipeRecommendation> {
 
-    // 재료 이름 통일
-    fun normalizeIngredient(name: String): String {
-        val value = name.trim()
-
-        return when {
-            value.contains("달걀") || value.contains("계란") -> "계란"
-
-            value == "밥" ||
-                    value.contains("쌀") -> "밥"
-
-            value.contains("대파") || value == "파" -> "대파"
-
-            value.contains("돼지고기") ||
-                    value.contains("돈육") ||
-                    value == "돼지" -> "돼지고기"
-
-            value.contains("소고기") ||
-                    value.contains("쇠고기") -> "소고기"
-
-            value.contains("닭고기") ||
-                    value == "닭" -> "닭고기"
-
-            value.contains("양파") -> "양파"
-            value.contains("감자") -> "감자"
-            value.contains("두부") -> "두부"
-            value.contains("김치") -> "김치"
-            value.contains("햄") -> "햄"
-            value.contains("참치") -> "참치"
-            value.contains("당근") -> "당근"
-            value.contains("버섯") -> "버섯"
-            value.contains("고추") -> "고추"
-
-            else -> value
-        }
-    }
-
-    // 사용자가 가진 재료
     val normalizedUserIngredients =
         userIngredients
             .map { normalizeIngredient(it) }
             .toSet()
 
-    return recipes
-        .mapNotNull { recipe ->
+    return recipes.mapNotNull { recipe ->
 
-            // 필수재료 정리
-            val requiredIngredients =
-                recipe.ingredients
-                    .map { normalizeIngredient(it) }
-                    .distinct()
+        val requiredIngredients =
+            recipe.ingredients
+                .map { normalizeIngredient(it) }
+                .distinct()
 
-            if (requiredIngredients.isEmpty()) {
-                return@mapNotNull null
+        if (requiredIngredients.isEmpty()) {
+            return@mapNotNull null
+        }
+
+        // 필수 재료 중 가지고 있는 재료
+        val matchedRequiredIngredients =
+            requiredIngredients.filter {
+                it in normalizedUserIngredients
             }
 
-            // 내가 가지고 있는 필수재료 개수
-            val matchedRequired =
-                requiredIngredients.count {
+        val matchedRequired =
+            matchedRequiredIngredients.size
+
+        // 없는 필수 재료
+        val missingRequired =
+            requiredIngredients.filter {
+                it !in normalizedUserIngredients
+            }
+
+        // 필수 재료 충족률
+        val requiredRatio =
+            matchedRequired.toDouble() /
+                    requiredIngredients.size
+
+        // 있으면 좋은 재료 중 가지고 있는 재료
+        val matchedOptional =
+            recipe.optionalIngredients
+                .map { normalizeIngredient(it) }
+                .distinct()
+                .count {
                     it in normalizedUserIngredients
                 }
 
-            // 필수재료 충족률
-            val requiredRatio =
-                matchedRequired.toDouble() / requiredIngredients.size
+        // 점수 계산
+        var score =
+            requiredRatio * 100
 
-            // 선택재료 매칭
-            val matchedOptional =
-                recipe.optionalIngredients
-                    .map { normalizeIngredient(it) }
-                    .distinct()
-                    .count {
-                        it in normalizedUserIngredients
-                    }
+        // 선택 재료 하나당 +5점
+        score += matchedOptional * 5
 
-            /*
-             * 추천 기준
-             *
-             * 100% 충족       → 가장 좋음
-             * 75% 이상         → 추천
-             * 50% 이상         → 후보
-             * 50% 미만         → 제외
-             */
-            if (requiredRatio < 0.5) {
-                return@mapNotNull null
-            }
-
-            // 점수 계산
-            var score = requiredRatio * 100
-
-            // 선택재료가 맞으면 추가 점수
-            score += matchedOptional * 5
-
-            // 조리시간 보너스/감점
-            score += when {
-                recipe.time <= 20 -> 15
-                recipe.time <= 30 -> 10
-                recipe.time <= 40 -> 5
-                recipe.time <= 60 -> -5
-                else -> -15
-            }
-
-            Triple(
-                recipe,
-                matchedRequired,
-                score
-            )
+        // 조리 시간이 짧을수록 보너스
+        score += when {
+            recipe.time <= 10 -> 20
+            recipe.time <= 20 -> 15
+            recipe.time <= 30 -> 10
+            recipe.time <= 40 -> 5
+            else -> 0
         }
 
-        // 점수가 높은 레시피부터
-        .sortedByDescending { it.third }
+        // 필수 재료가 하나도 없으면 제외
+        if (matchedRequired == 0) {
+            return@mapNotNull null
+        }
 
-        // 최대 20개
+        RecipeRecommendation(
+            recipe = recipe,
+            matchedRequired = matchedRequired,
+            missingRequired = missingRequired,
+            matchedOptional = matchedOptional,
+            score = score
+        )
+    }
+        .sortedByDescending { it.score }
         .take(20)
-
-        // Recipe만 반환
-        .map { it.first }
 }
