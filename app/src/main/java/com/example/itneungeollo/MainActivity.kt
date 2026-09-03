@@ -56,6 +56,12 @@ fun App() {
         mutableStateOf("home")
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val recipeList = remember {
+        RecipeRepository.loadRecipes(context)
+    }
+
     var selectedIngredients by remember {
         mutableStateOf(setOf<String>())
     }
@@ -91,6 +97,7 @@ fun App() {
 
             RecommendScreen(
                 userIngredients = selectedIngredients,
+                recipeList = recipeList,
 
                 onBackClick = {
                     screen = "ingredients"
@@ -619,6 +626,7 @@ fun normalizeIngredient(
 @Composable
 fun RecommendScreen(
     userIngredients: Set<String>,
+    recipeList: List<Recipe>,
     onBackClick: () -> Unit,
     onRecipeClick: (Recipe) -> Unit
 ) {
@@ -626,7 +634,7 @@ fun RecommendScreen(
     val recommendedRecipes =
         recommendRecipes(
             userIngredients = userIngredients,
-            recipes = recipes
+            recipes = recipeList
         )
 
     val recipesPerPage = 3

@@ -1122,60 +1122,120 @@ fun recommendRecipes(
     recipes: List<Recipe>
 ): List<Recipe> {
 
-    return recipes
+    // 재료 이름 통일
+    fun normalizeIngredient(name: String): String {
+        val value = name.trim()
 
-        // 기본 양념은 자동으로 있다고 가정한다.
-        .filter { recipe ->
+        return when {
+            value.contains("달걀") || value.contains("계란") -> "계란"
 
-            recipe.ingredients
-                .filter { ingredient ->
+            value == "밥" ||
+                    value.contains("쌀") -> "밥"
 
-                    ingredient !in basicSeasonings
-                }
-                .all { ingredient ->
+            value.contains("대파") || value == "파" -> "대파"
 
-                    ingredient in userIngredients
-                }
+            value.contains("돼지고기") ||
+                    value.contains("돈육") ||
+                    value == "돼지" -> "돼지고기"
+
+            value.contains("소고기") ||
+                    value.contains("쇠고기") -> "소고기"
+
+            value.contains("닭고기") ||
+                    value == "닭" -> "닭고기"
+
+            value.contains("양파") -> "양파"
+            value.contains("감자") -> "감자"
+            value.contains("두부") -> "두부"
+            value.contains("김치") -> "김치"
+            value.contains("햄") -> "햄"
+            value.contains("참치") -> "참치"
+            value.contains("당근") -> "당근"
+            value.contains("버섯") -> "버섯"
+            value.contains("고추") -> "고추"
+
+            else -> value
         }
+    }
 
-        // 가지고 있는 재료를 많이 활용하는 레시피 우선
-        .sortedWith(
+    // 사용자가 가진 재료
+    val normalizedUserIngredients =
+        userIngredients
+            .map { normalizeIngredient(it) }
+            .toSet()
 
-            compareByDescending<Recipe> { recipe ->
+    return recipes
+        .mapNotNull { recipe ->
 
-                // 필수 재료 매칭 수
-                val requiredCount =
-                    recipe.ingredients
-                        .filter { ingredient ->
+            // 필수재료 정리
+            val requiredIngredients =
+                recipe.ingredients
+                    .map { normalizeIngredient(it) }
+                    .distinct()
 
-                            ingredient !in basicSeasonings
-                        }
-                        .count { ingredient ->
-
-                            ingredient in userIngredients
-                        }
-
-
-                // 선택 재료 매칭 수
-                val optionalCount =
-                    recipe.optionalIngredients
-                        .filter { ingredient ->
-
-                            ingredient !in basicSeasonings
-                        }
-                        .count { ingredient ->
-
-                            ingredient in userIngredients
-                        }
-
-
-                requiredCount + optionalCount
+            if (requiredIngredients.isEmpty()) {
+                return@mapNotNull null
             }
 
-                // 점수가 같으면 조리 시간이 짧은 순서
-                .thenBy { recipe ->
-
-                    recipe.time
+            // 내가 가지고 있는 필수재료 개수
+            val matchedRequired =
+                requiredIngredients.count {
+                    it in normalizedUserIngredients
                 }
-        )
+
+            // 필수재료 충족률
+            val requiredRatio =
+                matchedRequired.toDouble() / requiredIngredients.size
+
+            // 선택재료 매칭
+            val matchedOptional =
+                recipe.optionalIngredients
+                    .map { normalizeIngredient(it) }
+                    .distinct()
+                    .count {
+                        it in normalizedUserIngredients
+                    }
+
+            /*
+             * 추천 기준
+             *
+             * 100% 충족       → 가장 좋음
+             * 75% 이상         → 추천
+             * 50% 이상         → 후보
+             * 50% 미만         → 제외
+             */
+            if (requiredRatio < 0.5) {
+                return@mapNotNull null
+            }
+
+            // 점수 계산
+            var score = requiredRatio * 100
+
+            // 선택재료가 맞으면 추가 점수
+            score += matchedOptional * 5
+
+            // 조리시간 보너스/감점
+            score += when {
+                recipe.time <= 20 -> 15
+                recipe.time <= 30 -> 10
+                recipe.time <= 40 -> 5
+                recipe.time <= 60 -> -5
+                else -> -15
+            }
+
+            Triple(
+                recipe,
+                matchedRequired,
+                score
+            )
+        }
+
+        // 점수가 높은 레시피부터
+        .sortedByDescending { it.third }
+
+        // 최대 20개
+        .take(20)
+
+        // Recipe만 반환
+        .map { it.first }
 }
