@@ -188,22 +188,6 @@ fun HomeScreen(
 fun IngredientScreen(
     onRecommendClick: (Set<String>) -> Unit
 ) {
-
-    // 표시 이름 / 실제 저장 이름
-    val ingredients = listOf(
-        "🥚 계란" to "계란",
-        "🍚 밥" to "밥",
-        "🥬 김치" to "김치",
-        "🧅 양파" to "양파",
-        "🌱 대파" to "대파",
-        "🧈 두부" to "두부",
-        "🍖 햄" to "햄",
-        "🐟 참치" to "참치",
-        "🥔 감자" to "감자"
-
-
-    )
-
     var selectedIngredients by remember {
         mutableStateOf(setOf<String>())
     }
@@ -212,14 +196,11 @@ fun IngredientScreen(
         mutableStateOf("")
     }
 
-    // 기본 양념 펼침 여부
     var showSeasonings by remember {
         mutableStateOf(false)
     }
 
-    // 화면 스크롤
     val scrollState = rememberScrollState()
-
 
     Column(
         modifier = Modifier
@@ -253,65 +234,92 @@ fun IngredientScreen(
 
 
         // =================================================
-        // 기본 재료 선택
+        // 재료 선택
         // =================================================
 
-        ingredients.chunked(3).forEach { rowIngredients ->
+        ingredients
+            .filter { it.category != IngredientCategory.SEASONING }
+            .chunked(3)
+        // =================================================
+// 재료 카테고리
+// =================================================
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
+        val ingredientCategories = listOf(
+            IngredientCategory.VEGETABLE to "🥬 채소",
+            IngredientCategory.MEAT to "🥩 육류",
+            IngredientCategory.SEAFOOD to "🐟 수산물",
+            IngredientCategory.DAIRY_EGG to "🥚 계란·유제품",
+            IngredientCategory.GRAIN_NOODLE to "🌾 곡류·면",
+            IngredientCategory.PROCESSED to "🥫 가공식품"
+        )
 
-                horizontalArrangement =
-                    Arrangement.SpaceEvenly
-            ) {
+        ingredientCategories.forEach { (category, categoryName) ->
 
-                rowIngredients.forEach { (displayName, ingredientName) ->
+            Text(
+                text = categoryName,
+                fontSize = 20.sp
+            )
 
-                    val isSelected =
-                        ingredientName in selectedIngredients
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
-                    Button(
-                        onClick = {
+            ingredients
+                .filter { it.category == category }
+                .chunked(3)
+                .forEach { rowIngredients ->
 
-                            selectedIngredients =
-                                if (isSelected) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
 
-                                    selectedIngredients -
-                                            ingredientName
-
-                                } else {
-
-                                    selectedIngredients +
-                                            ingredientName
-                                }
-                        }
+                        horizontalArrangement =
+                            Arrangement.SpaceEvenly
                     ) {
 
-                        Text(
-                            text =
-                                if (isSelected) {
-                                    "✓ $ingredientName"
-                                } else {
-                                    displayName
-                                },
+                        rowIngredients.forEach { ingredient ->
 
-                            fontSize = 15.sp
-                        )
+                            val isSelected =
+                                ingredient.name in selectedIngredients
+
+                            Button(
+                                onClick = {
+
+                                    selectedIngredients =
+                                        if (isSelected) {
+                                            selectedIngredients -
+                                                    ingredient.name
+                                        } else {
+                                            selectedIngredients +
+                                                    ingredient.name
+                                        }
+                                }
+                            ) {
+
+                                Text(
+                                    text =
+                                        if (isSelected) {
+                                            "✓ ${ingredient.name}"
+                                        } else {
+                                            ingredient.name
+                                        },
+
+                                    fontSize = 15.sp
+                                )
+                            }
+                        }
                     }
+
+                    Spacer(
+                        modifier = Modifier.height(8.dp)
+                    )
                 }
-            }
 
             Spacer(
                 modifier = Modifier.height(10.dp)
             )
         }
-
-
-        Spacer(
-            modifier = Modifier.height(15.dp)
-        )
 
 
         // =================================================
@@ -410,9 +418,7 @@ fun IngredientScreen(
             modifier = Modifier.height(8.dp)
         )
 
-
         OutlinedTextField(
-
             value = inputText,
 
             onValueChange = {
