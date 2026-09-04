@@ -584,41 +584,21 @@ fun normalizeIngredient(
     input: String
 ): String {
 
-    val ingredient =
+    val normalizedInput =
         input
             .trim()
             .replace(" ", "")
 
-    return when {
+    val ingredient =
+        ingredients.firstOrNull { item ->
 
-        ingredient.contains("달걀") -> "계란"
+            item.name.replace(" ", "") == normalizedInput ||
+                    item.aliases.any { alias ->
+                        alias.replace(" ", "") == normalizedInput
+                    }
+        }
 
-        ingredient.contains("계란") -> "계란"
-
-        ingredient.contains("밥") -> "밥"
-
-        ingredient.contains("김치") -> "김치"
-
-        ingredient.contains("양파") -> "양파"
-
-        ingredient.contains("대파") -> "대파"
-
-        ingredient.contains("두부") -> "두부"
-
-        ingredient.contains("햄") -> "햄"
-
-        ingredient.contains("참치") -> "참치"
-
-        ingredient.contains("감자") -> "감자"
-
-        ingredient.contains("부침가루") -> "부침가루"
-        ingredient.contains("마요네즈") || ingredient.contains("마요") -> "마요네즈"
-        ingredient.contains("라면") -> "라면"
-        ingredient.contains("소시지") || ingredient.contains("소세지") -> "소시지"
-        ingredient.contains("치즈") -> "치즈"
-
-        else -> ingredient
-    }
+    return ingredient?.name ?: normalizedInput
 }
 
 
