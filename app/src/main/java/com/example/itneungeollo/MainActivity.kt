@@ -31,7 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.layout.FlowRow
 
 class MainActivity : ComponentActivity() {
 
@@ -78,10 +79,13 @@ fun App() {
         "ingredients" -> {
 
             IngredientScreen(
-                onRecommendClick = { ingredients ->
+                selectedIngredients = selectedIngredients,
 
+                onIngredientChange = { ingredients ->
                     selectedIngredients = ingredients
+                },
 
+                onRecommendClick = {
                     screen = "recommend"
                 }
             )
@@ -186,37 +190,34 @@ fun HomeScreen(
 
 @Composable
 fun IngredientScreen(
-    onRecommendClick: (Set<String>) -> Unit
+    selectedIngredients: Set<String>,
+    onIngredientChange: (Set<String>) -> Unit,
+    onRecommendClick: () -> Unit
 ) {
-    var selectedIngredients by remember {
-        mutableStateOf(setOf<String>())
-    }
-
-    var inputText by remember {
+    var ingredientSearchText by remember {
         mutableStateOf("")
     }
 
-    var showSeasonings by remember {
-        mutableStateOf(false)
-    }
-
-    val scrollState = rememberScrollState()
+    val ingredientCategories = listOf(
+        IngredientCategory.VEGETABLE to "🥬 채소",
+        IngredientCategory.MEAT to "🥩 육류",
+        IngredientCategory.SEAFOOD to "🐟 수산물",
+        IngredientCategory.DAIRY_EGG to "🥚 계란·유제품",
+        IngredientCategory.GRAIN_NOODLE to "🌾 곡류·면",
+        IngredientCategory.PROCESSED to "🥫 가공식품"
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBF5))
-            .verticalScroll(scrollState)
-            .padding(20.dp)
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState())
     ) {
 
-        // =================================================
-        // 제목
-        // =================================================
-
         Text(
-            text = "뭐가 남았나요? 🥕",
-            fontSize = 29.sp
+            text = "있는걸로",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold
         )
 
         Spacer(
@@ -224,354 +225,233 @@ fun IngredientScreen(
         )
 
         Text(
-            text = "집에 있는 재료를 골라주세요.",
+            text = "집에 있는 재료를 선택해주세요.",
             fontSize = 16.sp
         )
 
         Spacer(
-            modifier = Modifier.height(25.dp)
+            modifier = Modifier.height(16.dp)
+        )
+
+        // 재료 검색
+        OutlinedTextField(
+            value = ingredientSearchText,
+            onValueChange = {
+                ingredientSearchText = it
+            },
+            label = {
+                Text("재료 검색")
+            },
+            placeholder = {
+                Text("예: 계란, 양파, 감자")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(
+            modifier = Modifier.height(16.dp)
         )
 
 
-        // =================================================
-        // 재료 선택
-        // =================================================
 
-        ingredients
-            .filter { it.category != IngredientCategory.SEASONING }
-            .chunked(3)
-        // =================================================
-// 재료 카테고리
-// =================================================
-
-        val ingredientCategories = listOf(
-            IngredientCategory.VEGETABLE to "🥬 채소",
-            IngredientCategory.MEAT to "🥩 육류",
-            IngredientCategory.SEAFOOD to "🐟 수산물",
-            IngredientCategory.DAIRY_EGG to "🥚 계란·유제품",
-            IngredientCategory.GRAIN_NOODLE to "🌾 곡류·면",
-            IngredientCategory.PROCESSED to "🥫 가공식품"
-        )
-
-        ingredientCategories.forEach { (category, categoryName) ->
+        // 선택된 재료
+        if (selectedIngredients.isNotEmpty()) {
 
             Text(
-                text = categoryName,
-                fontSize = 20.sp
+                text = "선택한 재료",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
             )
 
             Spacer(
                 modifier = Modifier.height(8.dp)
             )
 
-            ingredients
-                .filter { it.category == category }
-                .chunked(3)
-                .forEach { rowIngredients ->
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedIngredients.forEach { ingredient ->
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .wrapContentHeight(),
-
-                        horizontalArrangement =
-                            Arrangement.SpaceEvenly
-                    ) {
-
-                        rowIngredients.forEach { ingredient ->
-
-                            val isSelected =
-                                ingredient.name in selectedIngredients
-
-                            Button(
-                                onClick = {
-
-                                    selectedIngredients =
-                                        if (isSelected) {
-                                            selectedIngredients -
-                                                    ingredient.name
-                                        } else {
-                                            selectedIngredients +
-                                                    ingredient.name
-                                        }
-                                }
-                            ) {
-
-                                Text(
-                                    text =
-                                        if (isSelected) {
-                                            "✓ ${ingredient.name}"
-                                        } else {
-                                            ingredient.name
-                                        },
-
-                                    fontSize = 15.sp
-                                )
-                            }
+                    Button(
+                        onClick = {
+                            onIngredientChange(
+                                selectedIngredients - ingredient
+                            )
                         }
+                    ) {
+                        Text("✓ $ingredient")
+                    }
+                }
+            }
+
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
+        }
+
+        // 재료 카테고리
+        ingredientCategories.forEach { (category, categoryName) ->
+
+            val filteredIngredients =
+                ingredients
+                    .filter {
+                        it.category == category
+                    }
+                    .filter { ingredient ->
+
+                        val searchText =
+                            ingredientSearchText.trim()
+
+                        searchText.isEmpty() ||
+                                ingredient.name.contains(
+                                    searchText,
+                                    ignoreCase = true
+                                ) ||
+                                ingredient.aliases.any {
+                                    it.contains(
+                                        searchText,
+                                        ignoreCase = true
+                                    )
+                                }
                     }
 
-                    Spacer(
-                        modifier = Modifier.height(8.dp)
-                    )
-                }
+            if (filteredIngredients.isNotEmpty()) {
+
+                Text(
+                    text = categoryName,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(
+                    modifier = Modifier.height(8.dp)
+                )
+
+                filteredIngredients
+                    .chunked(3)
+                    .forEach { rowIngredients ->
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            horizontalArrangement =
+                                Arrangement.SpaceEvenly
+                        ) {
+
+                            rowIngredients.forEach { ingredient ->
+
+                                val isSelected =
+                                    ingredient.name in selectedIngredients
+
+                                Button(
+                                    onClick = {
+
+                                        onIngredientChange(
+                                            if (isSelected) {
+                                                selectedIngredients -
+                                                        ingredient.name
+                                            } else {
+                                                selectedIngredients +
+                                                        ingredient.name
+                                            }
+                                        )
+                                    }
+                                ) {
+                                    Text(
+                                        text =
+                                            if (isSelected) {
+                                                "✓ ${ingredient.name}"
+                                            } else {
+                                                ingredient.name
+                                            },
+                                        fontSize = 15.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
+                    }
+
+                Spacer(
+                    modifier = Modifier.height(12.dp)
+                )
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        // 검색 결과가 없을 때 직접 추가
+        val searchText = ingredientSearchText.trim()
+
+        if (
+            searchText.isNotEmpty() &&
+            ingredients.none { ingredient ->
+                ingredient.name.contains(
+                    searchText,
+                    ignoreCase = true
+                ) ||
+                        ingredient.aliases.any {
+                            it.contains(
+                                searchText,
+                                ignoreCase = true
+                            )
+                        }
+            }
+        ) {
+
+            Text(
+                text = "검색 결과가 없어요 😢",
+                fontSize = 18.sp
+            )
 
             Spacer(
                 modifier = Modifier.height(10.dp)
             )
-        }
 
+            Button(
+                onClick = {
 
-        // =================================================
-        // 기본 양념
-        // =================================================
+                    val normalizedIngredient =
+                        normalizeIngredient(searchText)
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
+                    onIngredientChange(
+                        selectedIngredients + normalizedIngredient
+                    )
 
-            shape = RoundedCornerShape(16.dp),
-
-            colors = CardDefaults.cardColors(
-                containerColor = Color.White
-            )
-        ) {
-
-            Column(
+                    ingredientSearchText = ""
+                },
                 modifier = Modifier.fillMaxWidth()
             ) {
-
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-
-                    onClick = {
-                        showSeasonings = !showSeasonings
-                    }
-                ) {
-
-                    Text(
-                        text =
-                            if (showSeasonings) {
-                                "기본 양념 🧂  ▲"
-                            } else {
-                                "기본 양념 🧂  ▼"
-                            },
-
-                        fontSize = 17.sp
-                    )
-                }
-
-
-                if (showSeasonings) {
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                bottom = 15.dp
-                            )
-                    ) {
-
-                        Text(
-                            text =
-                                "기본 양념은 구비되어 있다고 가정합니다.",
-                            fontSize = 14.sp
-                        )
-
-                        Spacer(
-                            modifier = Modifier.height(12.dp)
-                        )
-
-                        basicSeasonings.forEach { seasoning ->
-
-                            Text(
-                                text = "✓ $seasoning",
-                                fontSize = 16.sp
-                            )
-
-                            Spacer(
-                                modifier = Modifier.height(4.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
-
-
-        // =================================================
-        // 직접 입력
-        // =================================================
-
-        Text(
-            text = "직접 입력",
-            fontSize = 20.sp
-        )
-
-        Spacer(
-            modifier = Modifier.height(8.dp)
-        )
-
-        OutlinedTextField(
-            value = inputText,
-
-            onValueChange = {
-                inputText = it
-            },
-
-            modifier = Modifier.fillMaxWidth(),
-
-            placeholder = {
-                Text("예: 계란, 밥, 김치")
-            },
-
-            singleLine = true
-        )
-
-
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
-
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-
-            onClick = {
-
-                val newIngredients =
-                    inputText
-                        .split(",")
-                        .map {
-                            normalizeIngredient(it)
-                        }
-                        .filter {
-                            it.isNotEmpty()
-                        }
-                        .toSet()
-
-                selectedIngredients =
-                    selectedIngredients + newIngredients
-
-                inputText = ""
-            }
-        ) {
-
-            Text("재료 추가")
-        }
-
-
-        Spacer(
-            modifier = Modifier.height(25.dp)
-        )
-
-
-        // =================================================
-        // 내가 가진 재료
-        // =================================================
-
-        Text(
-            text = "내가 가진 재료",
-            fontSize = 20.sp
-        )
-
-        Spacer(
-            modifier = Modifier.height(10.dp)
-        )
-
-
-        if (selectedIngredients.isEmpty()) {
-
-            Text(
-                text = "재료를 선택해주세요 👆",
-                fontSize = 17.sp
-            )
-
-        } else {
-
-            selectedIngredients.forEach { ingredient ->
-
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 3.dp),
-
-                    shape = RoundedCornerShape(12.dp),
-
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
-                ) {
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
-
-                        horizontalArrangement =
-                            Arrangement.SpaceBetween,
-
-                        verticalAlignment =
-                            Alignment.CenterVertically
-                    ) {
-
-                        Text(
-                            text = "✅ $ingredient",
-                            fontSize = 17.sp
-                        )
-
-                        Button(
-                            onClick = {
-
-                                selectedIngredients =
-                                    selectedIngredients - ingredient
-                            }
-                        ) {
-
-                            Text("삭제")
-                        }
-                    }
-                }
-            }
-        }
-
-
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
-
-
-        // =================================================
-        // 추천 버튼
-        // =================================================
-
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-
-            onClick = {
-
-                onRecommendClick(
-                    selectedIngredients
+                Text(
+                    text = "+ $searchText 추가",
+                    fontSize = 17.sp
                 )
             }
-        ) {
 
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
+        }
+
+        // 레시피 추천 버튼
+        Button(
+            onClick = onRecommendClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
             Text(
-                text = "이걸로 뭐 먹지? 🍳",
+                text = "레시피 추천받기",
                 fontSize = 18.sp
             )
         }
-
-
-        Spacer(
-            modifier = Modifier.height(30.dp)
-        )
     }
 }
 
