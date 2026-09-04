@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedTextField
@@ -352,7 +353,21 @@ fun IngredientScreen(
                                                         ingredient.name
                                             }
                                         )
-                                    }
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor =
+                                            if (isSelected) {
+                                                Color(0xFF6A4FB6) // 선택됨: 진한 보라
+                                            } else {
+                                                Color(0xFFEDE7F6) // 선택 안 됨: 연한 회보라
+                                            },
+                                        contentColor =
+                                            if (isSelected) {
+                                                Color.White
+                                            } else {
+                                                Color(0xFF4A4A4A)
+                                            }
+                                    )
                                 ) {
                                     Text(
                                         text =
@@ -361,7 +376,13 @@ fun IngredientScreen(
                                             } else {
                                                 ingredient.name
                                             },
-                                        fontSize = 15.sp
+                                        fontSize = 15.sp,
+                                        fontWeight =
+                                            if (isSelected) {
+                                                FontWeight.Bold
+                                            } else {
+                                                FontWeight.Normal
+                                            }
                                     )
                                 }
                             }
@@ -756,10 +777,12 @@ fun RecipeCard(
 
                 Text(
                     text =
-                        "부족한 재료: " +
+                        "⚠️ 부족한 재료: " +
                                 recommendation.missingRequired.joinToString(", "),
 
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD9534F) // 경고용 붉은 계열
                 )
 
                 Spacer(
