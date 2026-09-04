@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.FlowRow
+import androidx.activity.compose.BackHandler
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -51,27 +53,19 @@ class MainActivity : ComponentActivity() {
 // =====================================================
 
 @Composable
-fun App() {
+fun App(viewModel: AppViewModel = viewModel()) {
 
-    var screen by remember {
-        mutableStateOf("home")
+    BackHandler(enabled = viewModel.screen != "home") {
+        viewModel.goBack()
     }
 
-    var selectedIngredients by remember {
-        mutableStateOf(setOf<String>())
-    }
-
-    var selectedRecipe by remember {
-        mutableStateOf<Recipe?>(null)
-    }
-
-    when (screen) {
+    when (viewModel.screen) {
 
         "home" -> {
 
             HomeScreen(
                 onStartClick = {
-                    screen = "ingredients"
+                    viewModel.goToIngredients()
                 }
             )
         }
@@ -79,14 +73,14 @@ fun App() {
         "ingredients" -> {
 
             IngredientScreen(
-                selectedIngredients = selectedIngredients,
+                selectedIngredients = viewModel.selectedIngredients,
 
                 onIngredientChange = { ingredients ->
-                    selectedIngredients = ingredients
+                    viewModel.updateIngredients(ingredients)
                 },
 
                 onRecommendClick = {
-                    screen = "recommend"
+                    viewModel.goToRecommend()
                 }
             )
         }
@@ -94,26 +88,25 @@ fun App() {
         "recommend" -> {
 
             RecommendScreen(
-                userIngredients = selectedIngredients,
+                userIngredients = viewModel.selectedIngredients,
                 onBackClick = {
-                    screen = "ingredients"
+                    viewModel.goBack()
                 },
                 onRecipeClick = { recipe ->
-                    selectedRecipe = recipe
-                    screen = "detail"
+                    viewModel.selectRecipe(recipe)
                 }
             )
         }
 
         "detail" -> {
 
-            selectedRecipe?.let { recipe ->
+            viewModel.selectedRecipe?.let { recipe ->
 
                 RecipeDetailScreen(
                     recipe = recipe,
 
                     onBackClick = {
-                        screen = "recommend"
+                        viewModel.goBack()
                     }
                 )
             }
