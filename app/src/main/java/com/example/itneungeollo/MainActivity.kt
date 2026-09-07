@@ -506,6 +506,11 @@ fun RecommendScreen(
     onBackClick: () -> Unit,
     onRecipeClick: (Recipe) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val recipes = remember {
+        loadRecipesFromAssets(context)
+    }
 
     val recommendedRecipes =
         recommendRecipes(
