@@ -51,6 +51,10 @@ import androidx.compose.ui.semantics.stateDescription
 
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
 
 class MainActivity : ComponentActivity() {
 
@@ -58,7 +62,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            App()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+            ) {
+                App()
+            }
         }
     }
 }
