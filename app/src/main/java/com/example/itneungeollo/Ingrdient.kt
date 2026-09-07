@@ -186,6 +186,14 @@ val ingredients = listOf(
     Ingredient(
         name = "식초",
         category = IngredientCategory.SEASONING
-    )
+    ),
+    Ingredient(
+        name = "아보카도",
+        category = IngredientCategory.FRUIT
+    ),
+    Ingredient(
+        name = "레몬",
+        category = IngredientCategory.FRUIT
+    ),
 )
 

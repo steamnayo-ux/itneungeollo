@@ -39,7 +39,9 @@ data class Recipe(
     val seasonings: List<String>,
 
     // 만드는 방법
-    val steps: List<String>
+    val steps: List<String>,
+
+    val emoji: String = "🍽️"
 )
 
 data class RecipeRecommendation(
@@ -175,7 +177,8 @@ fun loadRecipesFromAssets(context: android.content.Context): List<Recipe> {
                 ingredients = jsonArrayToList("ingredients"),
                 optionalIngredients = jsonArrayToList("optionalIngredients"),
                 seasonings = jsonArrayToList("seasonings"),
-                steps = jsonArrayToList("steps")
+                steps = jsonArrayToList("steps") ,
+                emoji = obj.optString("emoji", "🍽️")
             )
         )
     }

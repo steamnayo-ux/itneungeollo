@@ -36,6 +36,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.layout.FlowRow
 import androidx.activity.compose.BackHandler
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.launch
+import kotlin.random.Random
+
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.draw.shadow
 
 class MainActivity : ComponentActivity() {
 
@@ -125,54 +137,148 @@ fun HomeScreen(
     onStartClick: () -> Unit
 ) {
 
+    val offsetX = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val targetX = Random.nextInt(-22, 23).toFloat()
+            val targetY = Random.nextInt(-22, 23).toFloat()
+
+            launch {
+                offsetX.animateTo(
+                    targetValue = targetX,
+                    animationSpec = tween(
+                        durationMillis = 500,
+                        easing = FastOutSlowInEasing
+                    )
+                )
+            }
+
+            offsetY.animateTo(
+                targetValue = targetY,
+                animationSpec = tween(
+                    durationMillis = 500,
+                    easing = FastOutSlowInEasing
+                )
+            )
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFFFBF5))
-            .padding(30.dp),
+            .padding(horizontal = 28.dp, vertical = 40.dp),
 
         horizontalAlignment = Alignment.CenterHorizontally,
 
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.SpaceBetween
     ) {
 
-        Text(
-            text = "있는걸로 🍳",
-            fontSize = 38.sp
-        )
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
 
-        Spacer(
-            modifier = Modifier.height(20.dp)
-        )
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Text(
-            text = "집에 있는 재료로\n오늘 뭐 먹지?",
-            fontSize = 23.sp
-        )
+            // 뒤쪽 은은한 그림자 원 + 앞쪽 원형 배경 + 통통 튀는 이모지
+            Box(
+                modifier = Modifier.size(160.dp),
+                contentAlignment = Alignment.Center
+            ) {
 
-        Spacer(
-            modifier = Modifier.height(12.dp)
-        )
+                Box(
+                    modifier = Modifier
+                        .size(150.dp)
+                        .shadow(
+                            elevation = 18.dp,
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            ambientColor = Color(0xFF6A4FB6),
+                            spotColor = Color(0xFF6A4FB6)
+                        )
+                        .background(
+                            color = Color(0xFFEDE7F6),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                )
 
-        Text(
-            text = "없는 재료는 찾지 말고,\n있는 걸로 먹자!",
-            fontSize = 16.sp
-        )
+                Text(
+                    text = "🍳",
+                    fontSize = 68.sp,
+                    modifier = Modifier.offset(
+                        x = offsetX.value.dp,
+                        y = offsetY.value.dp
+                    )
+                )
+            }
 
-        Spacer(
-            modifier = Modifier.height(40.dp)
-        )
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
-            modifier = Modifier.fillMaxWidth(),
+            Text(
+                text = "있는걸로",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2D2438)
+            )
 
-            onClick = onStartClick
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "집에 있는 재료로",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF4A4A4A),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+
+            Text(
+                text = "오늘 뭐 먹지?",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF6A4FB6),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxWidth()
         ) {
 
             Text(
-                text = "재료 고르기 🍚",
-                fontSize = 18.sp
+                text = "레시피 50개 · 재료 40여 가지",
+                fontSize = 13.sp,
+                color = Color(0xFFA69BC7)
             )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp)
+                    .shadow(
+                        elevation = 10.dp,
+                        shape = RoundedCornerShape(18.dp),
+                        ambientColor = Color(0xFF6A4FB6),
+                        spotColor = Color(0xFF6A4FB6)
+                    ),
+
+                shape = RoundedCornerShape(18.dp),
+
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF6A4FB6)
+                ),
+
+                onClick = onStartClick
+            ) {
+                Text(
+                    text = "재료 고르기 🍚",
+                    fontSize = 19.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -197,6 +303,7 @@ fun IngredientScreen(
         IngredientCategory.MEAT to "🥩 육류",
         IngredientCategory.SEAFOOD to "🐟 수산물",
         IngredientCategory.DAIRY_EGG to "🥚 계란·유제품",
+        IngredientCategory.FRUIT to "🥑 과일",
         IngredientCategory.GRAIN_NOODLE to "🌾 곡류·면",
         IngredientCategory.PROCESSED to "🥫 가공식품"
     )
@@ -753,7 +860,7 @@ fun RecipeCard(
 
             // 레시피 이름
             Text(
-                text = "$rank. ${recipe.name}",
+                text = "$rank. ${recipe.emoji} ${recipe.name}",
                 fontSize = 24.sp
             )
 
@@ -890,7 +997,7 @@ fun RecipeDetailScreen(
             ) {
 
                 Text(
-                    text = "🍳 ${recipe.name}",
+                    text = "${recipe.emoji} ${recipe.name}",
                     fontSize = 30.sp
                 )
 
