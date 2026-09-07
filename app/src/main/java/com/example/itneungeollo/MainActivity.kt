@@ -45,6 +45,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.graphicsLayer
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.stateDescription
 
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
@@ -206,10 +209,9 @@ fun HomeScreen(
                 Text(
                     text = "🍳",
                     fontSize = 68.sp,
-                    modifier = Modifier.offset(
-                        x = offsetX.value.dp,
-                        y = offsetY.value.dp
-                    )
+                    modifier = Modifier
+                        .offset(x = offsetX.value.dp, y = offsetY.value.dp)
+                        .semantics { invisibleToUser() }
                 )
             }
 
@@ -474,7 +476,11 @@ fun IngredientScreen(
                                             } else {
                                                 Color(0xFF4A4A4A)
                                             }
-                                    )
+                                    ),
+                                    modifier = Modifier.semantics {
+                                        stateDescription = if (isSelected) "선택됨" else "선택 안 됨"
+                                    }
+
                                 ) {
                                     Text(
                                         text =

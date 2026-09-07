@@ -146,42 +146,55 @@ fun recommendRecipes(
 
 fun loadRecipesFromAssets(context: android.content.Context): List<Recipe> {
 
-    val jsonString =
-        context.assets
-            .open("recipes.json")
-            .bufferedReader(Charsets.UTF_8)
-            .use { it.readText() }
+    return try {
 
-    val jsonArray = org.json.JSONArray(jsonString)
+        val jsonString =
+            context.assets
+                .open("recipes.json")
+                .bufferedReader(Charsets.UTF_8)
+                .use { it.readText() }
 
-    val result = mutableListOf<Recipe>()
+        val jsonArray = org.json.JSONArray(jsonString)
 
-    for (i in 0 until jsonArray.length()) {
+        val result = mutableListOf<Recipe>()
 
-        val obj = jsonArray.getJSONObject(i)
+        for (i in 0 until jsonArray.length()) {
 
-        fun jsonArrayToList(key: String): List<String> {
-            val arr = obj.getJSONArray(key)
-            val list = mutableListOf<String>()
-            for (j in 0 until arr.length()) {
-                list.add(arr.getString(j))
+            try {
+                val obj = jsonArray.getJSONObject(i)
+
+                fun jsonArrayToList(key: String): List<String> {
+                    val arr = obj.optJSONArray(key) ?: return emptyList()
+                    val list = mutableListOf<String>()
+                    for (j in 0 until arr.length()) {
+                        list.add(arr.getString(j))
+                    }
+                    return list
+                }
+
+                result.add(
+                    Recipe(
+                        id = obj.getInt("id"),
+                        name = obj.getString("name"),
+                        time = obj.optInt("time", 0),
+                        ingredients = jsonArrayToList("ingredients"),
+                        optionalIngredients = jsonArrayToList("optionalIngredients"),
+                        seasonings = jsonArrayToList("seasonings"),
+                        steps = jsonArrayToList("steps"),
+                        emoji = obj.optString("emoji", "🍽️")
+                    )
+                )
+            } catch (e: Exception) {
+                // 레시피 하나가 깨져있어도 그 항목만 건너뛰고 나머지는 계속 로드
+                android.util.Log.e("RecipeLoad", "레시피 ${i}번 파싱 실패: ${e.message}")
             }
-            return list
         }
 
-        result.add(
-            Recipe(
-                id = obj.getInt("id"),
-                name = obj.getString("name"),
-                time = obj.getInt("time"),
-                ingredients = jsonArrayToList("ingredients"),
-                optionalIngredients = jsonArrayToList("optionalIngredients"),
-                seasonings = jsonArrayToList("seasonings"),
-                steps = jsonArrayToList("steps") ,
-                emoji = obj.optString("emoji", "🍽️")
-            )
-        )
-    }
+        result
 
-    return result
+    } catch (e: Exception) {
+        // JSON 파일 자체를 못 읽었을 때 (파일 없음, 형식 완전히 깨짐 등)
+        android.util.Log.e("RecipeLoad", "recipes.json 로드 실패: ${e.message}")
+        emptyList()
+    }
 }
