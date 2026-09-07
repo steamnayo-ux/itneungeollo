@@ -56,6 +56,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.safeDrawing
 
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1195,5 +1198,39 @@ fun RecipeDetailScreen(
         Spacer(
             modifier = Modifier.height(30.dp)
         )
+    }
+}
+
+@Composable
+fun NetworkTestScreen() {
+
+    var resultText by remember { mutableStateOf("버튼을 눌러보세요") }
+    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp)
+    ) {
+
+        Text(
+            text = resultText,
+            fontSize = 18.sp
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = {
+                isLoading = true
+                coroutineScope.launch {
+                    resultText = fetchRandomAdvice()
+                    isLoading = false
+                }
+            }
+        ) {
+            Text(if (isLoading) "불러오는 중..." else "명언 가져오기")
+        }
     }
 }
