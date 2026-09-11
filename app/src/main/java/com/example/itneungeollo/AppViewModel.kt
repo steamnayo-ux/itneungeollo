@@ -90,6 +90,20 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // =====================================================
+    // 다크모드 설정 (SharedPreferences)
+    // =====================================================
+
+    private val themePreferences = ThemePreferences(application)
+
+    var isDarkMode by mutableStateOf(themePreferences.isDarkMode())
+        private set
+
+    fun toggleDarkMode() {
+        isDarkMode = !isDarkMode
+        themePreferences.setDarkMode(isDarkMode)
+    }
+
     fun goToIngredients() {
         screen = "ingredients"
     }

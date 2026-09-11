@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +54,12 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.safeDrawing
+import com.example.itneungeollo.ui.theme.AppColors
+import com.example.itneungeollo.ui.theme.lightAppColors
+import com.example.itneungeollo.ui.theme.darkAppColors
 
 class MainActivity : ComponentActivity() {
 
@@ -77,115 +84,171 @@ fun App(viewModel: AppViewModel = viewModel()) {
         viewModel.goBack()
     }
 
-    when (viewModel.screen) {
+    val appColors =
+        if (viewModel.isDarkMode) darkAppColors() else lightAppColors()
 
-        "home" -> {
+    com.example.itneungeollo.ui.theme.ItneungeolloTheme(
+        darkTheme = viewModel.isDarkMode,
+        dynamicColor = false // 다크모드 토글이 시스템 색상에 묻히지 않도록 꺼둠
+    ) {
 
-            HomeScreen(
-                favoriteCount = viewModel.userRecipeDataMap.values.count { it.isFavorite },
-                onStartClick = {
-                    viewModel.goToIngredients()
-                },
-                onFavoritesClick = {
-                    viewModel.goToFavorites()
-                },
-                onRecentClick = {
-                    viewModel.goToRecent()
+        androidx.compose.material3.Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing),
+            color = appColors.background,
+            contentColor = appColors.textPrimary
+        ) {
+
+            when (viewModel.screen) {
+
+                "home" -> {
+
+                    HomeScreen(
+                        colors = appColors,
+                        favoriteCount = viewModel.userRecipeDataMap.values.count { it.isFavorite },
+                        isDarkMode = viewModel.isDarkMode,
+                        onStartClick = {
+                            viewModel.goToIngredients()
+                        },
+                        onFavoritesClick = {
+                            viewModel.goToFavorites()
+                        },
+                        onRecentClick = {
+                            viewModel.goToRecent()
+                        },
+                        onToggleDarkMode = {
+                            viewModel.toggleDarkMode()
+                        }
+                    )
                 }
-            )
-        }
 
-        "ingredients" -> {
+                "ingredients" -> {
 
-            IngredientScreen(
-                selectedIngredients = viewModel.selectedIngredients,
+                    IngredientScreen(
+                        colors = appColors,
+                        selectedIngredients = viewModel.selectedIngredients,
 
-                onIngredientChange = { ingredients ->
-                    viewModel.updateIngredients(ingredients)
-                },
+                        onIngredientChange = { ingredients ->
+                            viewModel.updateIngredients(ingredients)
+                        },
 
-                onRecommendClick = {
-                    viewModel.goToRecommend()
+                        onRecommendClick = {
+                            viewModel.goToRecommend()
+                        }
+                    )
                 }
-            )
-        }
 
-        "recommend" -> {
+                "recommend" -> {
 
-            RecommendScreen(
-                userIngredients = viewModel.selectedIngredients,
-                onBackClick = {
-                    viewModel.goBack()
-                },
-                onRecipeClick = { recipe ->
-                    viewModel.selectRecipe(recipe)
+                    RecommendScreen(
+                        colors = appColors,
+                        userIngredients = viewModel.selectedIngredients,
+                        onBackClick = {
+                            viewModel.goBack()
+                        },
+                        onRecipeClick = { recipe ->
+                            viewModel.selectRecipe(recipe)
+                        }
+                    )
                 }
-            )
-        }
 
-        "favorites" -> {
+                "favorites" -> {
 
-            FavoritesScreen(
-                favoriteRecipeIds = viewModel.userRecipeDataMap.values
-                    .filter { it.isFavorite }
-                    .map { it.recipeId }
-                    .toSet(),
-                getRating = { recipeId ->
-                    viewModel.getRating(recipeId)
-                },
-                onBackClick = {
-                    viewModel.goBack()
-                },
-                onRecipeClick = { recipe ->
-                    viewModel.selectRecipe(recipe)
+                    FavoritesScreen(
+                        colors = appColors,
+                        favoriteRecipeIds = viewModel.userRecipeDataMap.values
+                            .filter { it.isFavorite }
+                            .map { it.recipeId }
+                            .toSet(),
+                        getRating = { recipeId ->
+                            viewModel.getRating(recipeId)
+                        },
+                        onBackClick = {
+                            viewModel.goBack()
+                        },
+                        onRecipeClick = { recipe ->
+                            viewModel.selectRecipe(recipe)
+                        }
+                    )
                 }
-            )
-        }
 
-        "recent" -> {
+                "recent" -> {
 
-            RecentScreen(
-                recentRecipeIdsOrdered = viewModel.userRecipeDataMap.values
-                    .filter { it.lastViewedAt != null }
-                    .sortedByDescending { it.lastViewedAt }
-                    .map { it.recipeId },
-                getRating = { recipeId ->
-                    viewModel.getRating(recipeId)
-                },
-                onBackClick = {
-                    viewModel.goBack()
-                },
-                onRecipeClick = { recipe ->
-                    viewModel.selectRecipe(recipe)
+                    RecentScreen(
+                        colors = appColors,
+                        recentRecipeIdsOrdered = viewModel.userRecipeDataMap.values
+                            .filter { it.lastViewedAt != null }
+                            .sortedByDescending { it.lastViewedAt }
+                            .map { it.recipeId },
+                        getRating = { recipeId ->
+                            viewModel.getRating(recipeId)
+                        },
+                        onBackClick = {
+                            viewModel.goBack()
+                        },
+                        onRecipeClick = { recipe ->
+                            viewModel.selectRecipe(recipe)
+                        }
+                    )
                 }
-            )
-        }
 
-        "detail" -> {
+                "detail" -> {
 
-            viewModel.selectedRecipe?.let { recipe ->
+                    viewModel.selectedRecipe?.let { recipe ->
 
-                RecipeDetailScreen(
-                    recipe = recipe,
-                    isFavorite = viewModel.isFavorite(recipe.id),
-                    rating = viewModel.getRating(recipe.id),
-                    memo = viewModel.getMemo(recipe.id),
-                    onToggleFavorite = {
-                        viewModel.toggleFavorite(recipe.id)
-                    },
-                    onRatingChange = { star ->
-                        viewModel.setRating(recipe.id, star)
-                    },
-                    onMemoChange = { newMemo ->
-                        viewModel.setMemo(recipe.id, newMemo)
-                    },
+                        RecipeDetailScreen(
+                            colors = appColors,
+                            recipe = recipe,
+                            isFavorite = viewModel.isFavorite(recipe.id),
+                            rating = viewModel.getRating(recipe.id),
+                            memo = viewModel.getMemo(recipe.id),
+                            onToggleFavorite = {
+                                viewModel.toggleFavorite(recipe.id)
+                            },
+                            onRatingChange = { star ->
+                                viewModel.setRating(recipe.id, star)
+                            },
+                            onMemoChange = { newMemo ->
+                                viewModel.setMemo(recipe.id, newMemo)
+                            },
 
-                    onBackClick = {
-                        viewModel.goBack()
+                            onBackClick = {
+                                viewModel.goBack()
+                            }
+                        )
                     }
-                )
+                }
             }
         }
+    }
+}
+
+
+// =====================================================
+// 뒤로가기 버튼 (작은 원형 아이콘 스타일)
+// =====================================================
+
+@Composable
+fun BackButton(
+    colors: AppColors,
+    onClick: () -> Unit
+) {
+    androidx.compose.material3.IconButton(
+        onClick = onClick,
+        modifier = Modifier
+            .size(40.dp)
+            .background(
+                color = colors.accentSoft,
+                shape = androidx.compose.foundation.shape.CircleShape
+            )
+    ) {
+        Text(
+            text = "←",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            color = colors.accent
+        )
     }
 }
 
@@ -196,10 +259,13 @@ fun App(viewModel: AppViewModel = viewModel()) {
 
 @Composable
 fun HomeScreen(
+    colors: AppColors,
     favoriteCount: Int,
+    isDarkMode: Boolean,
     onStartClick: () -> Unit,
     onFavoritesClick: () -> Unit,
-    onRecentClick: () -> Unit
+    onRecentClick: () -> Unit,
+    onToggleDarkMode: () -> Unit
 ) {
 
     val offsetX = remember { Animatable(0f) }
@@ -233,7 +299,7 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBF5))
+            .background(colors.background)
             .padding(horizontal = 28.dp, vertical = 40.dp),
 
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -259,11 +325,11 @@ fun HomeScreen(
                         .shadow(
                             elevation = 18.dp,
                             shape = androidx.compose.foundation.shape.CircleShape,
-                            ambientColor = Color(0xFF6A4FB6),
-                            spotColor = Color(0xFF6A4FB6)
+                            ambientColor = colors.accent,
+                            spotColor = colors.accent
                         )
                         .background(
-                            color = Color(0xFFEDE7F6),
+                            color = colors.accentSoft,
                             shape = androidx.compose.foundation.shape.CircleShape
                         )
                 )
@@ -283,7 +349,7 @@ fun HomeScreen(
                 text = "있는걸로",
                 fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF2D2438)
+                color = colors.titleText
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -292,7 +358,7 @@ fun HomeScreen(
                 text = "집에 있는 재료로",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF4A4A4A),
+                color = colors.textPrimary,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
 
@@ -300,7 +366,7 @@ fun HomeScreen(
                 text = "오늘 뭐 먹지?",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color(0xFF6A4FB6),
+                color = colors.accent,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
         }
@@ -313,7 +379,7 @@ fun HomeScreen(
             Text(
                 text = "레시피 50개 · 재료 40여 가지",
                 fontSize = 13.sp,
-                color = Color(0xFFA69BC7)
+                color = colors.subtitleText
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -325,14 +391,14 @@ fun HomeScreen(
                     .shadow(
                         elevation = 10.dp,
                         shape = RoundedCornerShape(18.dp),
-                        ambientColor = Color(0xFF6A4FB6),
-                        spotColor = Color(0xFF6A4FB6)
+                        ambientColor = colors.accent,
+                        spotColor = colors.accent
                     ),
 
                 shape = RoundedCornerShape(18.dp),
 
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF6A4FB6)
+                    containerColor = colors.accent
                 ),
 
                 onClick = onStartClick
@@ -347,6 +413,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
 
@@ -360,7 +427,7 @@ fun HomeScreen(
                             "★ 즐겨찾기"
                         },
                         fontSize = 15.sp,
-                        color = Color(0xFF6A4FB6)
+                        color = colors.accent
                     )
                 }
 
@@ -370,7 +437,17 @@ fun HomeScreen(
                     Text(
                         text = "🕐 최근 본",
                         fontSize = 15.sp,
-                        color = Color(0xFF6A4FB6)
+                        color = colors.accent
+                    )
+                }
+
+                TextButton(
+                    onClick = onToggleDarkMode
+                ) {
+                    Text(
+                        text = if (isDarkMode) "☀️ 라이트 모드" else "🌙 다크 모드",
+                        fontSize = 15.sp,
+                        color = colors.accent
                     )
                 }
             }
@@ -385,6 +462,7 @@ fun HomeScreen(
 
 @Composable
 fun IngredientScreen(
+    colors: AppColors,
     selectedIngredients: Set<String>,
     onIngredientChange: (Set<String>) -> Unit,
     onRecommendClick: () -> Unit
@@ -559,15 +637,15 @@ fun IngredientScreen(
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor =
                                             if (isSelected) {
-                                                Color(0xFF6A4FB6) // 선택됨: 진한 보라
+                                                colors.accent // 선택됨: 진한 보라
                                             } else {
-                                                Color(0xFFEDE7F6) // 선택 안 됨: 연한 회보라
+                                                colors.accentSoft // 선택 안 됨: 연한 회보라
                                             },
                                         contentColor =
                                             if (isSelected) {
                                                 Color.White
                                             } else {
-                                                Color(0xFF4A4A4A)
+                                                colors.textPrimary
                                             }
                                     ),
                                     modifier = Modifier.semantics {
@@ -708,6 +786,7 @@ fun normalizeIngredient(
 
 @Composable
 fun RecommendScreen(
+    colors: AppColors,
     userIngredients: Set<String>,
     onBackClick: () -> Unit,
     onRecipeClick: (Recipe) -> Unit
@@ -722,6 +801,13 @@ fun RecommendScreen(
         mutableStateOf("")
     }
 
+    // 조리시간 필터
+    val timeFilterOptions = listOf("전체", "15분 이내", "30분 이내", "30분 초과")
+
+    var selectedTimeFilter by remember {
+        mutableStateOf("전체")
+    }
+
     val recommendedRecipes =
         recommendRecipes(
             userIngredients = userIngredients,
@@ -733,6 +819,13 @@ fun RecommendScreen(
                         searchText,
                         ignoreCase = true
                     )
+        }.filter { recommendation ->
+            when (selectedTimeFilter) {
+                "15분 이내" -> recommendation.recipe.time <= 15
+                "30분 이내" -> recommendation.recipe.time <= 30
+                "30분 초과" -> recommendation.recipe.time > 30
+                else -> true // "전체"
+            }
         }
 
     // 바로 만들 수 있는 레시피
@@ -758,19 +851,16 @@ fun RecommendScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBF5))
+            .background(colors.background)
             .verticalScroll(scrollState)
             .padding(20.dp)
     ) {
 
         // 뒤로가기
-        Button(
+        BackButton(
+            colors = colors,
             onClick = onBackClick
-        ) {
-            Text(
-                text = "← 재료 다시 고르기"
-            )
-        }
+        )
 
         Spacer(
             modifier = Modifier.height(20.dp)
@@ -813,15 +903,82 @@ fun RecommendScreen(
         )
 
         Spacer(
+            modifier = Modifier.height(16.dp)
+        )
+
+        // 조리시간 필터
+        Text(
+            text = "조리시간",
+            fontSize = 14.sp,
+            color = colors.textSecondary
+        )
+
+        Spacer(
+            modifier = Modifier.height(6.dp)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+
+            timeFilterOptions.forEach { option ->
+
+                val isSelected = option == selectedTimeFilter
+
+                Button(
+                    onClick = {
+                        selectedTimeFilter = option
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor =
+                            if (isSelected) {
+                                colors.accent
+                            } else {
+                                colors.accentSoft
+                            },
+                        contentColor =
+                            if (isSelected) {
+                                Color.White
+                            } else {
+                                colors.textPrimary
+                            }
+                    ),
+                    modifier = Modifier.semantics {
+                        stateDescription = if (isSelected) "선택됨" else "선택 안 됨"
+                    }
+                ) {
+                    Text(
+                        text = option,
+                        fontSize = 14.sp,
+                        fontWeight =
+                            if (isSelected) {
+                                FontWeight.Bold
+                            } else {
+                                FontWeight.Normal
+                            }
+                    )
+                }
+            }
+        }
+
+        Spacer(
             modifier = Modifier.height(25.dp)
         )
 
         if (
-            recipeSearchText.isNotBlank() &&
-            recommendedRecipes.isEmpty()
+            recommendedRecipes.isEmpty() &&
+            (recipeSearchText.isNotBlank() || selectedTimeFilter != "전체")
         ) {
             Text(
-                text = "\"$recipeSearchText\"와(과) 일치하는 레시피가 없어요 😢",
+                text =
+                    if (recipeSearchText.isNotBlank()) {
+                        "\"$recipeSearchText\"와(과) 일치하는 레시피가 없어요 😢"
+                    } else {
+                        "조건에 맞는 레시피가 없어요 😢"
+                    },
                 fontSize = 16.sp
             )
 
@@ -849,6 +1006,7 @@ fun RecommendScreen(
             readyRecipes.forEachIndexed { index, recommendation ->
 
                 RecipeCard(
+                    colors = colors,
                     rank = index + 1,
                     recommendation = recommendation,
                     userIngredients = userIngredients,
@@ -886,6 +1044,7 @@ fun RecommendScreen(
             almostRecipes.forEachIndexed { index, recommendation ->
 
                 RecipeCard(
+                    colors = colors,
                     rank = index + 1,
                     recommendation = recommendation,
                     userIngredients = userIngredients,
@@ -923,6 +1082,7 @@ fun RecommendScreen(
             candidateRecipes.forEachIndexed { index, recommendation ->
 
                 RecipeCard(
+                    colors = colors,
                     rank = index + 1,
                     recommendation = recommendation,
                     userIngredients = userIngredients,
@@ -950,7 +1110,7 @@ fun RecommendScreen(
                 shape = RoundedCornerShape(18.dp),
 
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = colors.cardBackground
                 )
             ) {
 
@@ -978,6 +1138,7 @@ fun RecommendScreen(
 
 @Composable
 fun FavoritesScreen(
+    colors: AppColors,
     favoriteRecipeIds: Set<Int>,
     getRating: (Int) -> Int?,
     onBackClick: () -> Unit,
@@ -997,18 +1158,15 @@ fun FavoritesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBF5))
+            .background(colors.background)
             .verticalScroll(scrollState)
             .padding(20.dp)
     ) {
 
-        Button(
+        BackButton(
+            colors = colors,
             onClick = onBackClick
-        ) {
-            Text(
-                text = "← 홈으로"
-            )
-        }
+        )
 
         Spacer(
             modifier = Modifier.height(20.dp)
@@ -1031,7 +1189,7 @@ fun FavoritesScreen(
                 shape = RoundedCornerShape(18.dp),
 
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = colors.cardBackground
                 )
             ) {
 
@@ -1058,7 +1216,7 @@ fun FavoritesScreen(
                     shape = RoundedCornerShape(18.dp),
 
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = colors.cardBackground
                     )
                 ) {
 
@@ -1093,7 +1251,7 @@ fun FavoritesScreen(
                             Text(
                                 text = "★".repeat(rating) + "☆".repeat(5 - rating),
                                 fontSize = 15.sp,
-                                color = Color(0xFF6A4FB6)
+                                color = colors.accent
                             )
                         }
 
@@ -1129,6 +1287,7 @@ fun FavoritesScreen(
 
 @Composable
 fun RecentScreen(
+    colors: AppColors,
     recentRecipeIdsOrdered: List<Int>,
     getRating: (Int) -> Int?,
     onBackClick: () -> Unit,
@@ -1153,18 +1312,15 @@ fun RecentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBF5))
+            .background(colors.background)
             .verticalScroll(scrollState)
             .padding(20.dp)
     ) {
 
-        Button(
+        BackButton(
+            colors = colors,
             onClick = onBackClick
-        ) {
-            Text(
-                text = "← 홈으로"
-            )
-        }
+        )
 
         Spacer(
             modifier = Modifier.height(20.dp)
@@ -1187,7 +1343,7 @@ fun RecentScreen(
                 shape = RoundedCornerShape(18.dp),
 
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = colors.cardBackground
                 )
             ) {
 
@@ -1212,7 +1368,7 @@ fun RecentScreen(
                     shape = RoundedCornerShape(18.dp),
 
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.White
+                        containerColor = colors.cardBackground
                     )
                 ) {
 
@@ -1247,7 +1403,7 @@ fun RecentScreen(
                             Text(
                                 text = "★".repeat(rating) + "☆".repeat(5 - rating),
                                 fontSize = 15.sp,
-                                color = Color(0xFF6A4FB6)
+                                color = colors.accent
                             )
                         }
 
@@ -1283,6 +1439,7 @@ fun RecentScreen(
 
 @Composable
 fun RecipeCard(
+    colors: AppColors,
     rank: Int,
     recommendation: RecipeRecommendation,
     userIngredients: Set<String>,
@@ -1297,7 +1454,7 @@ fun RecipeCard(
         shape = RoundedCornerShape(18.dp),
 
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colors.cardBackground
         )
     ) {
 
@@ -1399,6 +1556,7 @@ fun RecipeCard(
 
 @Composable
 fun RecipeDetailScreen(
+    colors: AppColors,
     recipe: Recipe,
     isFavorite: Boolean,
     rating: Int?,
@@ -1421,19 +1579,15 @@ fun RecipeDetailScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFFFFBF5))
+            .background(colors.background)
             .verticalScroll(scrollState)
             .padding(20.dp)
     ) {
 
-        Button(
+        BackButton(
+            colors = colors,
             onClick = onBackClick
-        ) {
-
-            Text(
-                text = "← 추천 목록으로"
-            )
-        }
+        )
 
 
         Spacer(
@@ -1447,7 +1601,7 @@ fun RecipeDetailScreen(
             shape = RoundedCornerShape(20.dp),
 
             colors = CardDefaults.cardColors(
-                containerColor = Color.White
+                containerColor = colors.cardBackground
             )
         ) {
 
@@ -1674,7 +1828,7 @@ fun RecipeDetailScreen(
                 shape = RoundedCornerShape(12.dp),
 
                 colors = CardDefaults.cardColors(
-                    containerColor = Color.White
+                    containerColor = colors.cardBackground
                 )
             ) {
 
