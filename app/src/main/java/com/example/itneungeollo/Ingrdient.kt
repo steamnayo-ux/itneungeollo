@@ -26,15 +26,18 @@ val ingredients = listOf(
     ),
     Ingredient(
         name = "대파",
-        category = IngredientCategory.VEGETABLE
+        category = IngredientCategory.VEGETABLE,
+        aliases = listOf("파", "쪽파", "실파")
     ),
     Ingredient(
         name = "감자",
-        category = IngredientCategory.VEGETABLE
+        category = IngredientCategory.VEGETABLE,
+        aliases = listOf("햇감자")
     ),
     Ingredient(
         name = "애호박",
-        category = IngredientCategory.VEGETABLE
+        category = IngredientCategory.VEGETABLE,
+        aliases = listOf("호박")
     ),
     Ingredient(
         name = "콩나물",
@@ -46,7 +49,8 @@ val ingredients = listOf(
     ),
     Ingredient(
         name = "버섯",
-        category = IngredientCategory.VEGETABLE
+        category = IngredientCategory.VEGETABLE,
+        aliases = listOf("양송이", "양송이버섯", "팽이버섯", "느타리버섯")
     ),
     Ingredient(
         name = "오이",
@@ -54,23 +58,27 @@ val ingredients = listOf(
     ),
     Ingredient(
         name = "토마토",
-        category = IngredientCategory.VEGETABLE
+        category = IngredientCategory.VEGETABLE,
+        aliases = listOf("방울토마토")
     ),
 
     // 🥩 육류
     Ingredient(
         name = "돼지고기",
-        category = IngredientCategory.MEAT
+        category = IngredientCategory.MEAT,
+        aliases = listOf("돼지고기 목살", "삼겹살", "목살")
     ),
     Ingredient(
         name = "닭고기",
-        category = IngredientCategory.MEAT
+        category = IngredientCategory.MEAT,
+        aliases = listOf("닭가슴살", "닭다리살")
     ),
 
     // 🐟 수산물
     Ingredient(
         name = "참치",
-        category = IngredientCategory.SEAFOOD
+        category = IngredientCategory.SEAFOOD,
+        aliases = listOf("참치캔")
     ),
 
     // 🥚 계란·유제품
@@ -149,11 +157,13 @@ val ingredients = listOf(
     ),
     Ingredient(
         name = "진간장",
-        category = IngredientCategory.SEASONING
+        category = IngredientCategory.SEASONING,
+        aliases = listOf("간장")
     ),
     Ingredient(
         name = "식용유",
-        category = IngredientCategory.SEASONING
+        category = IngredientCategory.SEASONING,
+        aliases = listOf("기름")
     ),
     Ingredient(
         name = "참기름",
@@ -196,4 +206,3 @@ val ingredients = listOf(
         category = IngredientCategory.FRUIT
     ),
 )
-
