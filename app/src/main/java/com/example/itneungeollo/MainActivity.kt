@@ -22,6 +22,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,15 +50,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.invisibleToUser
 import androidx.compose.ui.semantics.stateDescription
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.shadow
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.safeDrawing
-
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -65,13 +60,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .windowInsetsPadding(WindowInsets.safeDrawing)
-            ) {
-                App()
-            }
+            App()
         }
     }
 }
@@ -93,8 +82,12 @@ fun App(viewModel: AppViewModel = viewModel()) {
         "home" -> {
 
             HomeScreen(
+                favoriteCount = viewModel.userRecipeDataMap.values.count { it.isFavorite },
                 onStartClick = {
                     viewModel.goToIngredients()
+                },
+                onFavoritesClick = {
+                    viewModel.goToFavorites()
                 }
             )
         }
@@ -127,12 +120,36 @@ fun App(viewModel: AppViewModel = viewModel()) {
             )
         }
 
+        "favorites" -> {
+
+            FavoritesScreen(
+                favoriteRecipeIds = viewModel.userRecipeDataMap.values
+                    .filter { it.isFavorite }
+                    .map { it.recipeId }
+                    .toSet(),
+                onBackClick = {
+                    viewModel.goBack()
+                },
+                onRecipeClick = { recipe ->
+                    viewModel.selectRecipe(recipe)
+                }
+            )
+        }
+
         "detail" -> {
 
             viewModel.selectedRecipe?.let { recipe ->
 
                 RecipeDetailScreen(
                     recipe = recipe,
+                    isFavorite = viewModel.isFavorite(recipe.id),
+                    rating = viewModel.getRating(recipe.id),
+                    onToggleFavorite = {
+                        viewModel.toggleFavorite(recipe.id)
+                    },
+                    onRatingChange = { star ->
+                        viewModel.setRating(recipe.id, star)
+                    },
 
                     onBackClick = {
                         viewModel.goBack()
@@ -150,7 +167,9 @@ fun App(viewModel: AppViewModel = viewModel()) {
 
 @Composable
 fun HomeScreen(
-    onStartClick: () -> Unit
+    favoriteCount: Int,
+    onStartClick: () -> Unit,
+    onFavoritesClick: () -> Unit
 ) {
 
     val offsetX = remember { Animatable(0f) }
@@ -292,6 +311,22 @@ fun HomeScreen(
                     text = "재료 고르기 🍚",
                     fontSize = 19.sp,
                     fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            TextButton(
+                onClick = onFavoritesClick
+            ) {
+                Text(
+                    text = if (favoriteCount > 0) {
+                        "★ 즐겨찾기 ($favoriteCount)"
+                    } else {
+                        "★ 즐겨찾기"
+                    },
+                    fontSize = 15.sp,
+                    color = Color(0xFF6A4FB6)
                 )
             }
         }
@@ -638,11 +673,22 @@ fun RecommendScreen(
         loadRecipesFromAssets(context)
     }
 
+    var recipeSearchText by remember {
+        mutableStateOf("")
+    }
+
     val recommendedRecipes =
         recommendRecipes(
             userIngredients = userIngredients,
             recipes = recipes
-        )
+        ).filter { recommendation ->
+            val searchText = recipeSearchText.trim()
+            searchText.isEmpty() ||
+                    recommendation.recipe.name.contains(
+                        searchText,
+                        ignoreCase = true
+                    )
+        }
 
     // 바로 만들 수 있는 레시피
     val readyRecipes =
@@ -702,8 +748,42 @@ fun RecommendScreen(
         )
 
         Spacer(
+            modifier = Modifier.height(16.dp)
+        )
+
+        // 레시피 이름 검색
+        OutlinedTextField(
+            value = recipeSearchText,
+            onValueChange = {
+                recipeSearchText = it
+            },
+            label = {
+                Text("레시피 이름 검색")
+            },
+            placeholder = {
+                Text("예: 김치찌개")
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        Spacer(
             modifier = Modifier.height(25.dp)
         )
+
+        if (
+            recipeSearchText.isNotBlank() &&
+            recommendedRecipes.isEmpty()
+        ) {
+            Text(
+                text = "\"$recipeSearchText\"와(과) 일치하는 레시피가 없어요 😢",
+                fontSize = 16.sp
+            )
+
+            Spacer(
+                modifier = Modifier.height(20.dp)
+            )
+        }
 
 
         // =================================================
@@ -848,6 +928,141 @@ fun RecommendScreen(
 
 
 // =====================================================
+// 즐겨찾기 화면
+// =====================================================
+
+@Composable
+fun FavoritesScreen(
+    favoriteRecipeIds: Set<Int>,
+    onBackClick: () -> Unit,
+    onRecipeClick: (Recipe) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val recipes = remember {
+        loadRecipesFromAssets(context)
+    }
+
+    val favoriteRecipes =
+        recipes.filter { it.id in favoriteRecipeIds }
+
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFFBF5))
+            .verticalScroll(scrollState)
+            .padding(20.dp)
+    ) {
+
+        Button(
+            onClick = onBackClick
+        ) {
+            Text(
+                text = "← 홈으로"
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        Text(
+            text = "★ 즐겨찾기",
+            fontSize = 29.sp
+        )
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        if (favoriteRecipes.isEmpty()) {
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+
+                shape = RoundedCornerShape(18.dp),
+
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                )
+            ) {
+
+                Text(
+                    text =
+                        "아직 즐겨찾기한 레시피가 없어요.\n" +
+                                "레시피 상세 화면에서 ☆ 버튼을 눌러보세요!",
+
+                    fontSize = 17.sp,
+
+                    modifier = Modifier.padding(20.dp)
+                )
+            }
+
+        } else {
+
+            favoriteRecipes.forEach { recipe ->
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+
+                    shape = RoundedCornerShape(18.dp),
+
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    )
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp)
+                    ) {
+
+                        Text(
+                            text = "${recipe.emoji} ${recipe.name}",
+                            fontSize = 22.sp
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(6.dp)
+                        )
+
+                        Text(
+                            text = "⏱ ${recipe.time}분",
+                            fontSize = 15.sp
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(12.dp)
+                        )
+
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                onRecipeClick(recipe)
+                            }
+                        ) {
+                            Text(
+                                text = "레시피 보기"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(30.dp)
+        )
+    }
+}
+
+
+// =====================================================
 // 레시피 카드
 // =====================================================
 
@@ -970,6 +1185,10 @@ fun RecipeCard(
 @Composable
 fun RecipeDetailScreen(
     recipe: Recipe,
+    isFavorite: Boolean,
+    rating: Int?,
+    onToggleFavorite: () -> Unit,
+    onRatingChange: (Int) -> Unit,
     onBackClick: () -> Unit
 ) {
 
@@ -1015,10 +1234,25 @@ fun RecipeDetailScreen(
                     .padding(20.dp)
             ) {
 
-                Text(
-                    text = "${recipe.emoji} ${recipe.name}",
-                    fontSize = 30.sp
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+
+                    Text(
+                        text = "${recipe.emoji} ${recipe.name}",
+                        fontSize = 30.sp
+                    )
+
+                    Button(
+                        onClick = onToggleFavorite
+                    ) {
+                        Text(
+                            text = if (isFavorite) "★ 즐겨찾기" else "☆ 즐겨찾기"
+                        )
+                    }
+                }
 
                 Spacer(
                     modifier = Modifier.height(10.dp)
@@ -1030,6 +1264,23 @@ fun RecipeDetailScreen(
 
                     fontSize = 18.sp
                 )
+
+                Spacer(
+                    modifier = Modifier.height(14.dp)
+                )
+
+                // 별점
+                Row {
+                    (1..5).forEach { star ->
+                        Text(
+                            text = if ((rating ?: 0) >= star) "★" else "☆",
+                            fontSize = 26.sp,
+                            modifier = Modifier.clickable {
+                                onRatingChange(star)
+                            }
+                        )
+                    }
+                }
             }
         }
 
@@ -1198,39 +1449,5 @@ fun RecipeDetailScreen(
         Spacer(
             modifier = Modifier.height(30.dp)
         )
-    }
-}
-
-@Composable
-fun NetworkTestScreen() {
-
-    var resultText by remember { mutableStateOf("버튼을 눌러보세요") }
-    var isLoading by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp)
-    ) {
-
-        Text(
-            text = resultText,
-            fontSize = 18.sp
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Button(
-            onClick = {
-                isLoading = true
-                coroutineScope.launch {
-                    resultText = fetchRandomAdvice()
-                    isLoading = false
-                }
-            }
-        ) {
-            Text(if (isLoading) "불러오는 중..." else "명언 가져오기")
-        }
     }
 }
