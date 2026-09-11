@@ -88,6 +88,9 @@ fun App(viewModel: AppViewModel = viewModel()) {
                 },
                 onFavoritesClick = {
                     viewModel.goToFavorites()
+                },
+                onRecentClick = {
+                    viewModel.goToRecent()
                 }
             )
         }
@@ -127,6 +130,28 @@ fun App(viewModel: AppViewModel = viewModel()) {
                     .filter { it.isFavorite }
                     .map { it.recipeId }
                     .toSet(),
+                getRating = { recipeId ->
+                    viewModel.getRating(recipeId)
+                },
+                onBackClick = {
+                    viewModel.goBack()
+                },
+                onRecipeClick = { recipe ->
+                    viewModel.selectRecipe(recipe)
+                }
+            )
+        }
+
+        "recent" -> {
+
+            RecentScreen(
+                recentRecipeIdsOrdered = viewModel.userRecipeDataMap.values
+                    .filter { it.lastViewedAt != null }
+                    .sortedByDescending { it.lastViewedAt }
+                    .map { it.recipeId },
+                getRating = { recipeId ->
+                    viewModel.getRating(recipeId)
+                },
                 onBackClick = {
                     viewModel.goBack()
                 },
@@ -144,11 +169,15 @@ fun App(viewModel: AppViewModel = viewModel()) {
                     recipe = recipe,
                     isFavorite = viewModel.isFavorite(recipe.id),
                     rating = viewModel.getRating(recipe.id),
+                    memo = viewModel.getMemo(recipe.id),
                     onToggleFavorite = {
                         viewModel.toggleFavorite(recipe.id)
                     },
                     onRatingChange = { star ->
                         viewModel.setRating(recipe.id, star)
+                    },
+                    onMemoChange = { newMemo ->
+                        viewModel.setMemo(recipe.id, newMemo)
                     },
 
                     onBackClick = {
@@ -169,7 +198,8 @@ fun App(viewModel: AppViewModel = viewModel()) {
 fun HomeScreen(
     favoriteCount: Int,
     onStartClick: () -> Unit,
-    onFavoritesClick: () -> Unit
+    onFavoritesClick: () -> Unit,
+    onRecentClick: () -> Unit
 ) {
 
     val offsetX = remember { Animatable(0f) }
@@ -316,18 +346,33 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            TextButton(
-                onClick = onFavoritesClick
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Text(
-                    text = if (favoriteCount > 0) {
-                        "★ 즐겨찾기 ($favoriteCount)"
-                    } else {
-                        "★ 즐겨찾기"
-                    },
-                    fontSize = 15.sp,
-                    color = Color(0xFF6A4FB6)
-                )
+
+                TextButton(
+                    onClick = onFavoritesClick
+                ) {
+                    Text(
+                        text = if (favoriteCount > 0) {
+                            "★ 즐겨찾기 ($favoriteCount)"
+                        } else {
+                            "★ 즐겨찾기"
+                        },
+                        fontSize = 15.sp,
+                        color = Color(0xFF6A4FB6)
+                    )
+                }
+
+                TextButton(
+                    onClick = onRecentClick
+                ) {
+                    Text(
+                        text = "🕐 최근 본",
+                        fontSize = 15.sp,
+                        color = Color(0xFF6A4FB6)
+                    )
+                }
             }
         }
     }
@@ -934,6 +979,7 @@ fun RecommendScreen(
 @Composable
 fun FavoritesScreen(
     favoriteRecipeIds: Set<Int>,
+    getRating: (Int) -> Int?,
     onBackClick: () -> Unit,
     onRecipeClick: (Recipe) -> Unit
 ) {
@@ -1035,6 +1081,175 @@ fun FavoritesScreen(
                             text = "⏱ ${recipe.time}분",
                             fontSize = 15.sp
                         )
+
+                        val rating = getRating(recipe.id)
+
+                        if (rating != null) {
+
+                            Spacer(
+                                modifier = Modifier.height(4.dp)
+                            )
+
+                            Text(
+                                text = "★".repeat(rating) + "☆".repeat(5 - rating),
+                                fontSize = 15.sp,
+                                color = Color(0xFF6A4FB6)
+                            )
+                        }
+
+                        Spacer(
+                            modifier = Modifier.height(12.dp)
+                        )
+
+                        Button(
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                onRecipeClick(recipe)
+                            }
+                        ) {
+                            Text(
+                                text = "레시피 보기"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(
+            modifier = Modifier.height(30.dp)
+        )
+    }
+}
+
+
+// =====================================================
+// 최근 본 레시피 화면
+// =====================================================
+
+@Composable
+fun RecentScreen(
+    recentRecipeIdsOrdered: List<Int>,
+    getRating: (Int) -> Int?,
+    onBackClick: () -> Unit,
+    onRecipeClick: (Recipe) -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val recipes = remember {
+        loadRecipesFromAssets(context)
+    }
+
+    val recipeById = remember(recipes) {
+        recipes.associateBy { it.id }
+    }
+
+    // 순서(최근 본 순)를 그대로 유지하면서 레시피 객체로 변환
+    val recentRecipes =
+        recentRecipeIdsOrdered.mapNotNull { recipeById[it] }
+
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFFFBF5))
+            .verticalScroll(scrollState)
+            .padding(20.dp)
+    ) {
+
+        Button(
+            onClick = onBackClick
+        ) {
+            Text(
+                text = "← 홈으로"
+            )
+        }
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        Text(
+            text = "🕐 최근 본 레시피",
+            fontSize = 29.sp
+        )
+
+        Spacer(
+            modifier = Modifier.height(20.dp)
+        )
+
+        if (recentRecipes.isEmpty()) {
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+
+                shape = RoundedCornerShape(18.dp),
+
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                )
+            ) {
+
+                Text(
+                    text = "아직 본 레시피가 없어요.\n레시피를 눌러서 확인해보세요!",
+
+                    fontSize = 17.sp,
+
+                    modifier = Modifier.padding(20.dp)
+                )
+            }
+
+        } else {
+
+            recentRecipes.forEach { recipe ->
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+
+                    shape = RoundedCornerShape(18.dp),
+
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    )
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(18.dp)
+                    ) {
+
+                        Text(
+                            text = "${recipe.emoji} ${recipe.name}",
+                            fontSize = 22.sp
+                        )
+
+                        Spacer(
+                            modifier = Modifier.height(6.dp)
+                        )
+
+                        Text(
+                            text = "⏱ ${recipe.time}분",
+                            fontSize = 15.sp
+                        )
+
+                        val rating = getRating(recipe.id)
+
+                        if (rating != null) {
+
+                            Spacer(
+                                modifier = Modifier.height(4.dp)
+                            )
+
+                            Text(
+                                text = "★".repeat(rating) + "☆".repeat(5 - rating),
+                                fontSize = 15.sp,
+                                color = Color(0xFF6A4FB6)
+                            )
+                        }
 
                         Spacer(
                             modifier = Modifier.height(12.dp)
@@ -1187,12 +1402,20 @@ fun RecipeDetailScreen(
     recipe: Recipe,
     isFavorite: Boolean,
     rating: Int?,
+    memo: String?,
     onToggleFavorite: () -> Unit,
     onRatingChange: (Int) -> Unit,
+    onMemoChange: (String) -> Unit,
     onBackClick: () -> Unit
 ) {
 
     val scrollState = rememberScrollState()
+
+    // DB 저장은 비동기라 왕복 지연 때문에 입력창이 끊기지 않도록,
+    // 레시피별로 로컬 상태를 따로 들고 타이핑은 즉시 반영 + 저장은 콜백으로 위임
+    var memoText by remember(recipe.id) {
+        mutableStateOf(memo ?: "")
+    }
 
 
     Column(
@@ -1281,6 +1504,27 @@ fun RecipeDetailScreen(
                         )
                     }
                 }
+
+                Spacer(
+                    modifier = Modifier.height(16.dp)
+                )
+
+                // 메모
+                OutlinedTextField(
+                    value = memoText,
+                    onValueChange = { newText ->
+                        memoText = newText
+                        onMemoChange(newText)
+                    },
+                    label = {
+                        Text("메모")
+                    },
+                    placeholder = {
+                        Text("예: 소금 반 스푼만 넣기, 다음엔 양파 더 넣기")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2
+                )
             }
         }
 

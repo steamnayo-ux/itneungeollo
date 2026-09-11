@@ -98,6 +98,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         screen = "favorites"
     }
 
+    fun goToRecent() {
+        screen = "recent"
+    }
+
     fun goToRecommend() {
         screen = "recommend"
     }
@@ -125,6 +129,10 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 true
             }
             "favorites" -> {
+                screen = "home"
+                true
+            }
+            "recent" -> {
                 screen = "home"
                 true
             }
